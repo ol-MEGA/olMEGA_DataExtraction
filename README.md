@@ -1,4 +1,4 @@
-![olMEGA Logo](https://github.com/ol-MEGA/olMEGA_DataExtraction/blob/master/functions_reporting/latex/images/Logo.png =250x250) 
+<img src="https://github.com/ol-MEGA/olMEGA_DataExtraction/blob/master/functions_reporting/latex/images/Logo.png" alt="olMEGA Logo" width="250">
 
 # IHAB_DataExtraction #
 

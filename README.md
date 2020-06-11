@@ -2,6 +2,7 @@
 
 # IHAB_DataExtraction #
 
+Version 1.0
 Matlab tool for automatic data extraction and analysis from smartphone.
 
 ### Prerequisites: ###
@@ -43,7 +44,7 @@ ICA_DataAnalysis
 ```
 
 
-Version 1.0
+## License:
 
 Copyright 2020 olMEGA
 

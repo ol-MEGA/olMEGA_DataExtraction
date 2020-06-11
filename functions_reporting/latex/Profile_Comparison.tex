@@ -1,0 +1,69 @@
+
+\documentclass[11pt,a4paper,titlepage]{article}
+\usepackage[german]{babel}
+%\usepackage{bibgerm} % Zum Einbinden einer Bibliothek (wird hier nicht benötigt)
+\usepackage[latin1]{inputenc}
+\usepackage{graphicx}
+\usepackage{epstopdf} % wandelt automatisch eps- in pdf-Dateien um, falls pdf als Ausgabeformat gewählt wird
+\usepackage[top=2.5cm, bottom=3cm, left=2.6cm, right=2.6cm]{geometry} % Package zum einfachen Einstellen des Seitenlayouts
+\usepackage{amsmath} % Package zum Einbinden von Formeln etc.
+\usepackage{subfigure}
+\usepackage{placeins}
+ \usepackage{setspace}
+\onehalfspacing
+\usepackage{latexsym}
+\usepackage{float}
+\usepackage[caption = false]{subfig}
+\usepackage[final]{graphicx}
+\usepackage{amsfonts}
+\usepackage{amssymb}	
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[ngerman, num]{isodate}
+\usepackage{marvosym}
+\usepackage{eurosym}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\parindent0mm
+
+\usepackage{cmbright}
+
+\pagestyle{fancy}
+\lhead{$headtext_left$}
+\chead{$headtext_center$ \today}
+\rhead{$headtext_right$}
+\lfoot{$foottext_left$}
+\cfoot{$foottext_center$}
+\rfoot{$foottext_right$ \thepage/\pageref{LastPage}}
+
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0.0pt}
+
+\begin{document}
+\pagestyle{empty}
+
+\sffamily
+\thispagestyle{empty}
+
+$titlePage$
+
+\newpage
+
+\listoffigures
+\clearpage
+\pagestyle{fancy}
+\setcounter{page}{1}
+
+$part_diagrams$
+\clearpage
+$contents_diagrams$
+\clearpage
+$part_overview_1$
+\clearpage
+$contents_overview_1$
+\clearpage
+$part_overview_2$
+\clearpage
+$contents_overview_2$
+
+\end{document}

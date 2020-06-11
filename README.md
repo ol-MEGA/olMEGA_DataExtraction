@@ -1,4 +1,4 @@
-<img src="https://github.com/ol-MEGA/olMEGA_DataExtraction/blob/master/functions_reporting/latex/images/Logo.png" alt="olMEGA Logo" width="250">
+<img src="https://github.com/ol-MEGA/olMEGA_DataExtraction/blob/master/functions_reporting/latex/images/Logo.png" alt="olMEGA Logo" width="150">
 
 # IHAB_DataExtraction #
 

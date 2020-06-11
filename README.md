@@ -4,6 +4,10 @@
 
 Matlab tool for automatic data extraction and analysis from smartphone.
 
+### Prerequisites: ###
+* Matlab 2018b (or later)
+* ADB (if used with smartphone)
+
 ### Usage: ###  
 
 * Graphical User Interface:
@@ -38,9 +42,6 @@ ICA_DataAnalysis
 [obj].stAnalysis
 ```
 
-### Prerequisites: ###
-* Matlab 2018b (or later)
-* ADB (if used with smartphone)
 
 Version 1.0
 

@@ -1,6 +1,6 @@
 <img src="https://github.com/ol-MEGA/olMEGA_DataExtraction/blob/master/functions_reporting/latex/images/Logo.png" alt="olMEGA Logo" width="150">
 
-# IHAB_DataExtraction #
+# olMEGA_DataExtraction #
 
 Matlab tool for automatic data extraction and analysis from smartphone.  
 Version 1.0  

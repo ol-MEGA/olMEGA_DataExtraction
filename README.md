@@ -14,19 +14,19 @@ Version 1.0
 * Graphical User Interface:
 
 ```matlab
-IHABdata()
+olMEGA_DataExtraction()
 ```
 
 * Command Line:
 
 ```matlab
-[obj] = IHABdata([Path to data folder]);
+[obj] = olMEGA_DataExtraction([Path to data folder]);
 ```
 
-* or in case of IHAB-rl:
+* or in case of olMEGA_DataExtraction:
 
 ```matlab
-[obj] = IHABdata([Path to data folder], [#EMA run]);
+[obj] = olMEGA_DataExtraction([Path to data folder], [#EMA run]);
 ```
 
 * For complete analysis and PDF outptut:

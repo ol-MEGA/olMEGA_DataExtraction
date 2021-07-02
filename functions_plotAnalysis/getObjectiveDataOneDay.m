@@ -76,7 +76,7 @@ AllFeatFiles = strcat(AllFeatFiles,'.feat');
 % Load txt file with corrupt file names
 corruptTxtFile = fullfile(szBaseDir, stSubject.FolderName,'corrupt_files.txt');
 if ~exist(corruptTxtFile,'file')
-    CheckDataIntegrety(stSubject.FolderName, szBaseDir);
+    checkDataIntegrity(stSubject.FolderName, szBaseDir);
 end
 fid = fopen(corruptTxtFile,'r');
 corruptFiles = textscan(fid,'%s\n');

@@ -1,6 +1,6 @@
 function bInstalled = checkParallelToolBox()
 
-cTmp = ver('distcomp');
+cTmp = ver('parallel');
 bInstalled = cTmp.Name == "Parallel Computing Toolbox";
 
 end

@@ -36,7 +36,7 @@ caFileNames = {stFeatFiles.name};
 % (see ../Tools/CheckDataIntegrety.m)
 corruptTxtFile = fullfile(obj.stSubject.Folder, 'corrupt_files.txt');
 if ~exist(corruptTxtFile,'file')
-    CheckDataIntegrity(obj);
+    checkDataIntegrity(obj);
 end
 fid = fopen(corruptTxtFile,'r');
 corruptFiles = textscan(fid,'%s\n');

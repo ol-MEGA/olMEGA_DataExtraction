@@ -17,7 +17,7 @@ classdef olMEGA_DataExtraction < handle
         bTitles = false;
         nCompare_Run;
         
-        isParallel = true;
+        isParallel = false;
         isBatch = false;
         isHallo = false;
         isCommandLine = false;

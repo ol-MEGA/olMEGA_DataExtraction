@@ -242,7 +242,7 @@ classdef olMEGA_DataExtraction < handle
                 'termComments', 'Bemerkungen', ...
                 'termComparison', 'Vergleich', ...
                 'termPage', 'Seite', ...
-                'termProfile', 'Persönliches Hörprofil', ...
+                'termProfile', 'PersÃ¶nliches HÃ¶rprofil', ...
                 'termInstitute', 'Projekt [project name]');
             
             obj.stPrint = struct( ...
@@ -1268,8 +1268,8 @@ classdef olMEGA_DataExtraction < handle
         function [] = loadData(obj, ~, ~)
             
             sFolder_log = obj.stSubject.Folder;
-            sFolder_quest = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_Quest', '"'];
-            sFolder_features = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', '"'];
+            sFolder_quest = ['"', obj.stSubject.Folder, filesep, obj.stSubject.Name, '_Quest', '"'];
+            sFolder_features = ['"', obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', '"'];
             
             system(['mkdir ', sFolder_quest]);
             system(['mkdir ', sFolder_features]);

@@ -7,7 +7,7 @@ classdef olMEGA_DataExtraction < handle
         sFolderMain = pwd;
         sFolder_Latex = [pwd, filesep, 'functions_reporting', filesep, 'latex'];
         sFileName_Preferences = 'preferences.txt';
-        sLogFile = 'log2.txt';
+        sLogFile = 'log.txt';
         stPreferences;
         stAnalysis;
         stComparison;
@@ -183,6 +183,9 @@ classdef olMEGA_DataExtraction < handle
         bClear = 1;
         isDone;
         prefix;
+        
+        nMobileVersion;
+        sMobileDir;
     end
     
     methods
@@ -198,6 +201,14 @@ classdef olMEGA_DataExtraction < handle
                 myCluster = parcluster();
                 myCluster.NumWorkers = 12;
                 myPool = parpool(myCluster);
+            end
+            
+            [~, sVersion] = system("adb shell getprop ro.build.version.release");
+            obj.nMobileVersion = str2double(sVersion);
+            if obj.nMobileVersion <= 10
+                obj.sMobileDir = 'sdcard/olMEGA';
+            else
+                obj.sMobileDir = 'sdcard/Android/data/com.iha.olmega_mobilesoftware_v2/files';
             end
             
             obj.nHeight_PartLength = 3*obj.nDivision_Vertical + 2*obj.nButtonHeight;
@@ -488,6 +499,8 @@ classdef olMEGA_DataExtraction < handle
                 obj.nButtonWidth+20,...
                 obj.nButtonHeight];
             obj.hLabel_MinPartLength.Text = 'MPL:';
+            
+            obj.hLabel_MinPartLength.Enable = 'Off';
             %             obj.hLabel_MinPartLength.Tooltip = 'Minimum Part Length';
             
             % Button "Compare"
@@ -507,6 +520,8 @@ classdef olMEGA_DataExtraction < handle
                 obj.nButtonWidth - 30, obj.nButtonHeight];
             obj.hButton_MinPartLength.Text = num2str(obj.stPreferences.MinPartLength);
             obj.hButton_MinPartLength.ButtonPushedFcn = @obj.callbackMinPartLength;
+            
+            obj.hButton_MinPartLength.Enable = 'Off';
             
             % Phone Actions Tab 3
             
@@ -835,7 +850,7 @@ classdef olMEGA_DataExtraction < handle
             
             % check for Log
             
-            nLog = exist(fullfile(sFolder,'log2.txt'), 'file') == 2;
+            nLog = exist(fullfile(sFolder, obj.sLogFile), 'file') == 2;
             if nLog
                 fprintf('[x] Log data found.\n');
                 obj.bLog = 1;
@@ -963,7 +978,7 @@ classdef olMEGA_DataExtraction < handle
             % check for Log
             
             if ~obj.isCommandLine
-                nLog = exist(fullfile(sFolder,'log2.txt'), 'file') == 2;
+                nLog = exist(fullfile(sFolder, obj.sLogFile), 'file') == 2;
                 if nLog
                     obj.hStat_Log.Value = 'present';
                     obj.cListQuestionnaire{end+1} = '[x] Log data found.';
@@ -1034,8 +1049,8 @@ classdef olMEGA_DataExtraction < handle
             end
             
             if obj.isDataCompleteEnoughForAnalysis() && ~obj.isCommandLine
-                obj.hButton_Analyse.Enable = 'On';
-                obj.hButton_Compare.Enable = 'On';
+%                 obj.hButton_Analyse.Enable = 'On';
+%                 obj.hButton_Compare.Enable = 'On';
             end
             
             if obj.bLog && ~obj.isCommandLine
@@ -1181,6 +1196,7 @@ classdef olMEGA_DataExtraction < handle
                         return;
                     case 0
                         system('adb shell am force-stop com.fragtest.android.pa');
+                        system('adb shell am force-stop com.iha.olmega_mobilesoftware_v2');
                         obj.cListQuestionnaire{end+1} = 'Application was stopped.';
                         obj.hListBox.Value = obj.cListQuestionnaire;
                 end
@@ -1198,58 +1214,60 @@ classdef olMEGA_DataExtraction < handle
         
         function [] = eraseData(obj, ~, ~)
             
+            
+            
             vStatus = [];
             
             % Erase questionnaire data
-            sCommand_erase_quest = [obj.prefix, 'adb shell rm -r /sdcard/olMEGA/data'];
+            sCommand_erase_quest = [obj.prefix, 'adb shell rm -r ',obj.sMobileDir, '/data'];
             [status, ~] = system(sCommand_erase_quest);
             vStatus = [vStatus, status];
             
-            sCommand_erase_quest = [obj.prefix, 'adb shell mkdir /sdcard/olMEGA/data'];
+            sCommand_erase_quest = [obj.prefix, 'adb shell mkdir ',obj.sMobileDir, '/data'];
             [status, ~] = system(sCommand_erase_quest);
             vStatus = [vStatus, status];
             
-            sCommand_erase_quest = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///sdcard/olMEGA/data'];
+            sCommand_erase_quest = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///',obj.sMobileDir, '/data'];
             [status, ~] = system(sCommand_erase_quest);
             vStatus = [vStatus, status];
             
             % Erase feature data
-            sCommand_erase_features = [obj.prefix, 'adb shell rm -r /sdcard/olMEGA/features'];
+            sCommand_erase_features = [obj.prefix, 'adb shell rm -r ',obj.sMobileDir, '/features'];
             [status, ~] = system(sCommand_erase_features);
             vStatus = [vStatus, status];
             
-            sCommand_erase_features = [obj.prefix, 'adb shell mkdir /sdcard/olMEGA/features'];
+            sCommand_erase_features = [obj.prefix, 'adb shell mkdir ',obj.sMobileDir, '/features'];
             [status, ~] = system(sCommand_erase_features);
             vStatus = [vStatus, status];
             
-            sCommand_erase_features = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///sdcard/olMEGA/features'];
+            sCommand_erase_features = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///',obj.sMobileDir, '/features'];
             [status, ~] = system(sCommand_erase_features);
             vStatus = [vStatus, status];
             
             % Erase cache data
-            sCommand_erase_cache = [obj.prefix, 'adb shell rm -r /sdcard/olMEGA/cache'];
+            sCommand_erase_cache = [obj.prefix, 'adb shell rm -r ',obj.sMobileDir, '/cache'];
             [status, ~] = system(sCommand_erase_cache);
             vStatus = [vStatus, status];
             
-            sCommand_erase_cache = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///sdcard/olMEGA/cache'];
+            sCommand_erase_cache = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///',obj.sMobileDir, '/cache'];
             [status, ~] = system(sCommand_erase_cache);
             vStatus = [vStatus, status];
             
             % Erase log data
-            sCommand_erase_cache = [obj.prefix, 'adb shell rm -r /sdcard/olMEGA/log.txt'];
+            sCommand_erase_cache = [obj.prefix, 'adb shell rm -r ',obj.sMobileDir, '/', obj.sLogFile];
             [status, ~] = system(sCommand_erase_cache);
             vStatus = [vStatus, status];
             
             % Erase log2 data
-            sCommand_erase_cache = [obj.prefix, 'adb shell rm -r /sdcard/olMEGA/log2.txt'];
+%             sCommand_erase_cache = [obj.prefix, 'adb shell rm -r /sdcard/olMEGA/log2.txt'];
+%             [status, ~] = system(sCommand_erase_cache);
+%             vStatus = [vStatus, status];
+            
+            sCommand_erase_cache = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///',obj.sMobileDir, '/', obj.sLogFile];
             [status, ~] = system(sCommand_erase_cache);
             vStatus = [vStatus, status];
             
-            sCommand_erase_cache = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///sdcard/olMEGA/log.txt'];
-            [status, ~] = system(sCommand_erase_cache);
-            vStatus = [vStatus, status];
-            
-            [~, cmdout] = system('adb shell ls /sdcard/olMEGA/features');
+            [~, cmdout] = system(['adb shell ls ',obj.sMobileDir, '/features']);
             vStatus = [vStatus, (~isempty(find(strfind(cmdout, 'No such file or directory'))) || ~isempty(cmdout))];
             
             if (mean(vStatus) == 0)
@@ -1276,12 +1294,16 @@ classdef olMEGA_DataExtraction < handle
             
             % Copy Log data
             
-            sCommand_log = [obj.prefix, 'adb pull sdcard/olMEGA/log.txt ', sFolder_log];
+            
+%             sCommand_quest = [obj.prefix, 'adb ls ', sMobileDir, '/data/',cLine{4},' ', sFolder_quest];
+           
+            sCommand_log = [obj.prefix, 'adb pull ', obj.sMobileDir, '/', obj.sLogFile, ' ', sFolder_log];
+            
             [status, ~] = system(sCommand_log);
             
-            sCommand_log = [obj.prefix, 'adb pull sdcard/olMEGA/log2.txt ', sFolder_log];
-            [status, ~] = system(sCommand_log);
-            
+%             sCommand_log = [obj.prefix, 'adb pull sdcard/olMEGA/log2.txt ', sFolder_log];
+%             [status, ~] = system(sCommand_log);
+       
             if (status == 0)
                 obj.cListQuestionnaire{end+1} = '[x] Log data copied.';
                 obj.hStat_Log.Value = 'present';
@@ -1297,11 +1319,11 @@ classdef olMEGA_DataExtraction < handle
             
             % Copy Questionnaire data
             
-            sCommand_quest_dir = [obj.prefix, 'adb ls sdcard/olMEGA/data'];
+            sCommand_quest_dir = [obj.prefix, 'adb ls ', obj.sMobileDir, '/data'];
+           
             [~, cmdout] = system(sCommand_quest_dir);
             cLines_quest = splitlines(cmdout);
             nLines_quest = length(cLines_quest);
-            
             
             nApproxTime = 0;
             tic;
@@ -1312,7 +1334,8 @@ classdef olMEGA_DataExtraction < handle
                 cLine = split(cLines_quest{iLine});
                 if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
                     
-                    sCommand_quest = [obj.prefix, 'adb pull sdcard/olMEGA/data/',cLine{4},' ', sFolder_quest];
+                    sCommand_quest = [obj.prefix, 'adb pull ', obj.sMobileDir, '/data/',cLine{4},' ', sFolder_quest];
+                    
                     [status, ~] = system(sCommand_quest);
                     vStatus = [vStatus, status];
                     
@@ -1344,7 +1367,7 @@ classdef olMEGA_DataExtraction < handle
             
             % copy feature data
             
-            sCommand_quest_features = [obj.prefix, 'adb ls sdcard/olMEGA/features'];
+            sCommand_quest_features = [obj.prefix, 'adb ls ', obj.sMobileDir, '/features'];
             [~, cmdout] = system(sCommand_quest_features);
             cLines_features = splitlines(cmdout);
             cLines_features(1:2) = [];
@@ -1364,7 +1387,7 @@ classdef olMEGA_DataExtraction < handle
                 
                 cLine = split(cLines_features{iFeature});
                 if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
-                    sCommand_features = [obj.prefix, 'adb pull sdcard/olMEGA/features/',cLine{4},' ', sFolder_features];
+                    sCommand_features = [obj.prefix, 'adb pull ', obj.sMobileDir, '/features/',cLine{4},' ', sFolder_features];
                     [status, ~] = system(sCommand_features);
                     vStatus = [vStatus, status];
                     
@@ -1393,9 +1416,9 @@ classdef olMEGA_DataExtraction < handle
             
             obj.hListBox.Value = obj.cListQuestionnaire;
             
-            %             if obj.isDataComplete()
-            obj.hButton_Analyse.Enable = 'On';
-            %             end
+      
+%             obj.hButton_Analyse.Enable = 'On';
+      
             
             if obj.bLog
                 obj.extractConnection();
@@ -1415,7 +1438,7 @@ classdef olMEGA_DataExtraction < handle
             
             obj.bClear = 0;
             
-            sFileName = 'log2.txt';
+            sFileName = obj.sLogFile;
             
             cLog = fileread(fullfile(obj.stSubject.Folder,sFileName));
             cLog = splitlines(cLog);
@@ -1573,7 +1596,6 @@ classdef olMEGA_DataExtraction < handle
                 
             end
             
-            
             for iArea = 1:length(vBluetooth)-1
                 vX = [vTimeBluetooth(iArea), vTimeBluetooth(iArea), ...
                     vTimeBluetooth(iArea+1), vTimeBluetooth(iArea+1)];
@@ -1619,6 +1641,8 @@ classdef olMEGA_DataExtraction < handle
             
             obj.hAxes.Box = 'On';
             obj.hAxes.Layer = 'Top';
+            
+            disableDefaultInteractivity(obj.hAxes);
             
             % sort proportions
             

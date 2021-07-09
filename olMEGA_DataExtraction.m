@@ -1435,6 +1435,7 @@ classdef olMEGA_DataExtraction < handle
             obj.hAxes.Units = 'Pixels';
             obj.hAxes.Position = [0,0,obj.hTab5.Position(3), obj.hTab5.Position(4)-20];
             obj.hAxes.Visible = 'Off';
+            obj.hAxes.Toolbar.Visible = 'Off';
             
             obj.bClear = 0;
             
@@ -1536,7 +1537,7 @@ classdef olMEGA_DataExtraction < handle
             
             nTimeMin = min([vTimeBluetooth, vTimeBattery, vTimeState, vTimeDisplay, vTimeVibration]) - nMinTime;
             nTimeMax = max([vTimeBluetooth, vTimeBattery, vTimeState, vTimeDisplay, vTimeVibration]) - nMinTime;
-            
+
             vTimeState = vTimeState - nMinTime;
             vTimeState(end+1) = nTimeMax;
             
@@ -1614,7 +1615,7 @@ classdef olMEGA_DataExtraction < handle
             end
             
             stairs(obj.hAxes, vTimeDisplay, vDisplay*0.50, 'Color', obj.mColors(3,:));
-            plot(obj.hAxes, vTimeBattery, vLevelBattery*0.99, 'k');
+            plot(obj.hAxes, vTimeBattery, vLevelBattery*0.99/100, 'k');
             
             obj.hHotspot_Legend = patch(obj.hAxes, vTimeBluetooth([1,1,end,end]),[0.5,1,1,0.5], [0.5,0.5,0.5], 'FaceAlpha',0.01);
             obj.hHotspot_Legend.LineStyle = 'none';
@@ -1642,7 +1643,6 @@ classdef olMEGA_DataExtraction < handle
             obj.hAxes.Box = 'On';
             obj.hAxes.Layer = 'Top';
             
-            disableDefaultInteractivity(obj.hAxes);
             
             % sort proportions
             

@@ -195,20 +195,12 @@ classdef olMEGA_DataExtraction < handle
             rmpath('legacy');
             rmpath('.git');
             
-            checkPrerequisites();
+%             checkPrerequisites();
             
             if obj.isParallel && isempty(gcp('nocreate')) && checkParallelToolBox
                 myCluster = parcluster();
                 myCluster.NumWorkers = 12;
                 myPool = parpool(myCluster);
-            end
-            
-            [~, sVersion] = system("adb shell getprop ro.build.version.release");
-            obj.nMobileVersion = str2double(sVersion);
-            if obj.nMobileVersion <= 10
-                obj.sMobileDir = 'sdcard/olMEGA';
-            else
-                obj.sMobileDir = 'sdcard/Android/data/com.iha.olmega_mobilesoftware_v2/files';
             end
             
             obj.nHeight_PartLength = 3*obj.nDivision_Vertical + 2*obj.nButtonHeight;
@@ -272,7 +264,7 @@ classdef olMEGA_DataExtraction < handle
                 'Folder', [], ...
                 'Analysis' , []);
             
-            obj.mColors = getColors();
+            obj.mColors = [getColors(); 0.7*ones(1, 3)];
             
             obj.getPreferencesFromFile();
             
@@ -491,6 +483,7 @@ classdef olMEGA_DataExtraction < handle
             obj.hButton_Analyse.Text = obj.sLabel_Button_Analyse;
             obj.hButton_Analyse.Enable = 'Off';
             obj.hButton_Analyse.ButtonPushedFcn = @obj.callbackAnalyseData;
+            obj.hButton_Analyse.Visible = 'Off';
             
             % Text Min Part Length
             obj.hLabel_MinPartLength = uilabel(obj.hTab2);
@@ -501,6 +494,7 @@ classdef olMEGA_DataExtraction < handle
             obj.hLabel_MinPartLength.Text = 'MPL:';
             
             obj.hLabel_MinPartLength.Enable = 'Off';
+            obj.hLabel_MinPartLength.Visible = 'Off';
             %             obj.hLabel_MinPartLength.Tooltip = 'Minimum Part Length';
             
             % Button "Compare"
@@ -512,6 +506,7 @@ classdef olMEGA_DataExtraction < handle
             obj.hButton_Compare.Text = obj.sLabel_Button_Compare;
             obj.hButton_Compare.Enable = 'Off';
             obj.hButton_Compare.ButtonPushedFcn = @obj.callbackCompareEMA;
+            obj.hButton_Compare.Visible = 'Off';
             
             % Button "Min Part Length"
             obj.hButton_MinPartLength = uibutton(obj.hTab2);
@@ -522,6 +517,7 @@ classdef olMEGA_DataExtraction < handle
             obj.hButton_MinPartLength.ButtonPushedFcn = @obj.callbackMinPartLength;
             
             obj.hButton_MinPartLength.Enable = 'Off';
+            obj.hButton_MinPartLength.Visible = 'Off';
             
             % Phone Actions Tab 3
             
@@ -581,6 +577,9 @@ classdef olMEGA_DataExtraction < handle
             obj.hAxes.Units = 'Pixels';
             obj.hAxes.Position = [0,0,obj.hTab5.Position(3), obj.hTab5.Position(4)-20];
             obj.hAxes.Visible = 'Off';
+            
+            
+            
             obj.bClear = 0;
             
             % calculating
@@ -1214,6 +1213,13 @@ classdef olMEGA_DataExtraction < handle
         
         function [] = eraseData(obj, ~, ~)
             
+            [~, sVersion] = system("adb shell getprop ro.build.version.release");
+            obj.nMobileVersion = str2double(sVersion);
+            if obj.nMobileVersion <= 10
+                obj.sMobileDir = 'sdcard/olMEGA';
+            else
+                obj.sMobileDir = 'sdcard/Android/data/com.iha.olmega_mobilesoftware_v2/files';
+            end
             
             
             vStatus = [];
@@ -1284,6 +1290,14 @@ classdef olMEGA_DataExtraction < handle
         end
         
         function [] = loadData(obj, ~, ~)
+            
+            [~, sVersion] = system("adb shell getprop ro.build.version.release");
+            obj.nMobileVersion = str2double(sVersion);
+            if obj.nMobileVersion <= 10
+                obj.sMobileDir = 'sdcard/olMEGA';
+            else
+                obj.sMobileDir = 'sdcard/Android/data/com.iha.olmega_mobilesoftware_v2/files';
+            end
             
             sFolder_log = obj.stSubject.Folder;
             sFolder_quest = ['"', obj.stSubject.Folder, filesep, obj.stSubject.Name, '_Quest', '"'];
@@ -1435,7 +1449,10 @@ classdef olMEGA_DataExtraction < handle
             obj.hAxes.Units = 'Pixels';
             obj.hAxes.Position = [0,0,obj.hTab5.Position(3), obj.hTab5.Position(4)-20];
             obj.hAxes.Visible = 'Off';
-            obj.hAxes.Toolbar.Visible = 'Off';
+            
+            if ~verLessThan('matlab', '9.10.0')
+                obj.hAxes.Toolbar.Visible = 'Off';
+            end
             
             obj.bClear = 0;
             
@@ -1455,6 +1472,8 @@ classdef olMEGA_DataExtraction < handle
             sOccDisplayOn = 'Display: on';
             sOccDisplayOff = 'Display: off';
             sOccVibration = 'Vibration:';
+            sOccClose = 'AppClosed';
+            sOccStart = 'AppStarted';
             
             sOccStateCharging = 'StateCharging';
             sOccStateConnecting = 'StateConnecting';
@@ -1477,6 +1496,7 @@ classdef olMEGA_DataExtraction < handle
             vTimeDisplay = [];
             vDisplay = [];
             vTimeVibration = [];
+            vTimeAppRunning = [];
             
             for iLog = 1:length(cLog)-1
                 sLogTime = cLog{iLog}(1:23);
@@ -1532,6 +1552,19 @@ classdef olMEGA_DataExtraction < handle
                 elseif contains(sLog, sOccVibration)
                     vTimeVibration(end+1) = stringToTimeMs(sLogTime);
                     
+                elseif contains(sLog, sOccClose)
+                    vTimeState(end+1) = stringToTimeMs(sLogTime);
+                    vState(end+1) = 0;
+                    vTimeDisplay(end+1) = stringToTimeMs(sLogTime);
+                    vDisplay(end+1) = 0;
+                    
+                elseif contains(sLog, sOccStart)
+                    if (length(vState) > 1)
+                        vState(end+1) = vState(end-1);
+                        vTimeState(end+1) = stringToTimeMs(sLogTime);
+                    end
+                    vTimeDisplay(end+1) = stringToTimeMs(sLogTime);
+                    vDisplay(end+1) = 1;
                 end
             end
             
@@ -1568,9 +1601,12 @@ classdef olMEGA_DataExtraction < handle
                 for iState = 1:length(vState)-1
                     vX = [vTimeState(iState), vTimeState(iState), ...
                         vTimeState(iState+1), vTimeState(iState+1)];
-                    vY = [0.5, 1, 1, 0.5];
+                    vY = [0.0, 1, 1, 0.0];
                     
-                    if vState(iState) == 1
+                    if vState(iState) == 0
+                        p = patch(obj.hAxes, vX, vY, obj.mColors(8,:));
+%                         obj.vProportions(1) = obj.vProportions(1) + vX(end)-vX(1);
+                    elseif vState(iState) == 1
                         p = patch(obj.hAxes, vX, vY, obj.mColors(1,:));
                         obj.vProportions(1) = obj.vProportions(1) + vX(end)-vX(1);
                     elseif vState(iState) == 2

@@ -29,7 +29,7 @@ olMEGA_DataExtraction()
 [obj] = olMEGA_DataExtraction([Path to data folder], [#EMA run]);
 ```
 
-## For IHAB study only: ##
+### For IHAB study only: ###
 
 * For complete analysis and PDF outptut:
 

@@ -3,7 +3,7 @@
 # olMEGA_DataExtraction #
 
 Matlab tool for automatic data extraction (and analysis) from smartphone.  
-Version 1.1 
+Version 2.0 
 
 ### Prerequisites: ###
 * Matlab 2018b (or later)

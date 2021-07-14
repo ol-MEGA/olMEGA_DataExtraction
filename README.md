@@ -17,6 +17,9 @@ Version 2.0
 olMEGA_DataExtraction()
 ```
 
+
+### For IHAB study only: ###
+
 * Command Line:
 
 ```matlab
@@ -28,8 +31,6 @@ olMEGA_DataExtraction()
 ```matlab
 [obj] = olMEGA_DataExtraction([Path to data folder], [#EMA run]);
 ```
-
-### For IHAB study only: ###
 
 * For complete analysis and PDF outptut:
 

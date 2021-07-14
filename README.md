@@ -29,6 +29,8 @@ olMEGA_DataExtraction()
 [obj] = olMEGA_DataExtraction([Path to data folder], [#EMA run]);
 ```
 
+### For IHAB study only: ###
+
 * For complete analysis and PDF outptut:
 
 ```matlab
@@ -46,7 +48,7 @@ ICA_DataAnalysis
 
 ## License:
 
-Copyright 2020 olMEGA
+Copyright 2021 olMEGA
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

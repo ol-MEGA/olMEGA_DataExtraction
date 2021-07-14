@@ -100,7 +100,7 @@ if exist(szMatFile, 'file') ~= 2
     %corruptFiles = listFeatFiles(cellfun(@(x) (strcmpi(x(1),'a')), listFeatFiles));
     corruptTxtFile = fullfile(obj.stSubject.Folder, 'corrupt_files.txt');
     if ~exist(corruptTxtFile,'file')
-        CheckDataIntegrety(obj.stSubject.Name);
+        checkDataIntegrity(obj);
     end
     fid = fopen(corruptTxtFile,'r');
     corruptFiles = textscan(fid,'%s\n');

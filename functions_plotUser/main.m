@@ -59,9 +59,9 @@ if ~isempty(stSubject)
             mkdir('cache');
         end
         
-        if ~exist(['cache', filesep, obj.stSubject.Code], 'file')
-            save(['cache', filesep, obj.stSubject.Code], 'configStruct', 'stSubject');
-        end
+%         if ~exist(['cache', filesep, obj.stSubject.Code], 'file')
+%             save(['cache', filesep, obj.stSubject.Code], 'configStruct', 'stSubject');
+%         end
         
         %% Overview
     end

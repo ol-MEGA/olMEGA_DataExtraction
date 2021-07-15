@@ -49,7 +49,7 @@ classdef olMEGA_DataExtraction < handle
         sLabelTab3 = 'Phone actions';
         sLabelTab4 = 'Output';
         sLabelTab5 = 'Activity';
-        sLabelTab6 = 'View Controls';
+        sLabelTab6 = 'Navigation';
         
         sStateCharging = 'Charging';
         sStateConnecting = 'Connecting';
@@ -71,10 +71,10 @@ classdef olMEGA_DataExtraction < handle
         hButton_Max;
         hButton_Min;
         hButton_Home;
-        sFile_Icon_Arrow_left = 'icon_Arrow_left.png';
-        sFile_Icon_Arrow_right = 'icon_Arrow_right.png';
-        sFile_Icon_Arrow_min = 'icon_Arrow_min.png';
-        sFile_Icon_Arrow_max = 'icon_Arrow_max.png';
+        sFile_Icon_Arrow_left = 'arrow-left_20.png';
+        sFile_Icon_Arrow_right = 'arrow-right_20.png';
+        sFile_Icon_Arrow_min = 'search-minus_1.png'; %'icon_Arrow_min.png';
+        sFile_Icon_Arrow_max = 'search-plus_1.png'; %'icon_Arrow_max.png';
         sFile_Icon_Home = 'icon_home.png';
         
         nButtonViewControl_Width = 30;

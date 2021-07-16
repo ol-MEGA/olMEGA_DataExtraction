@@ -1991,8 +1991,14 @@ classdef olMEGA_DataExtraction < handle
             end
             
             % Print Display Uptime
-            stairs(obj.hAxes, vTimeDisplay, 0.3 + vDisplay/10, 'Color', obj.mColors(3,:));
-            
+            sh = stairs(obj.hAxes, vTimeDisplay, 0.3 + vDisplay/10, 'Color', obj.mColors(3,:));
+ 
+            bottom = 0.3;
+            x_tmp = [sh.XData(1),repelem(sh.XData(2:end),2)];
+            y_tmp = [repelem(sh.YData(1:end-1),2),sh.YData(end)];
+            p = fill(obj.hAxes, [x_tmp,fliplr(x_tmp)],[y_tmp,bottom*ones(size(y_tmp))], obj.mColors(3,:));
+            p.LineStyle = 'none';
+           
             % Print Battery status
             if ~isempty(find(vLevelBattery > 1))
                 vLevelBattery = vLevelBattery / 100;

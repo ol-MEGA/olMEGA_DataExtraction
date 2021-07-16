@@ -37,7 +37,7 @@ classdef olMEGA_DataExtraction < handle
         sLabel_Button_Compare = 'Compare';
         sLabel_Button_Open = 'Open';
         sLabel_Button_Clear = 'Clear';
-        sLabel_Button_Load = 'Load Data';
+        sLabel_Button_Load = 'Transfer';
         sLabel_Button_Kill = 'Kill App';
         sLabel_Button_Reboot = 'Reboot';
         sLabel_Button_Erase = 'Erase Data';
@@ -73,8 +73,8 @@ classdef olMEGA_DataExtraction < handle
         hButton_Home;
         sFile_Icon_Arrow_left = 'arrow-left_20.png';
         sFile_Icon_Arrow_right = 'arrow-right_20.png';
-        sFile_Icon_Arrow_min = 'search-minus_1.png'; %'icon_Arrow_min.png';
-        sFile_Icon_Arrow_max = 'search-plus_1.png'; %'icon_Arrow_max.png';
+        sFile_Icon_Arrow_min = 'search-minus_1.png';
+        sFile_Icon_Arrow_max = 'search-plus_1.png';
         sFile_Icon_Home = 'icon_home.png';
         
         nButtonViewControl_Width = 30;
@@ -571,7 +571,7 @@ classdef olMEGA_DataExtraction < handle
                 obj.nDivision_Vertical,...
                 obj.nButtonWidth ,...
                 obj.nButtonHeight];
-            obj.hButton_Reboot.Text = 'Reboot';
+            obj.hButton_Reboot.Text = obj.sLabel_Button_Reboot;
             obj.hButton_Reboot.Enable = 'On';
             obj.hButton_Reboot.ButtonPushedFcn = @obj.callbackRebootPhone;
             
@@ -581,7 +581,7 @@ classdef olMEGA_DataExtraction < handle
                 obj.nDivision_Vertical,...
                 obj.nButtonWidth ,...
                 obj.nButtonHeight];
-            obj.hButton_Erase.Text = 'Erase Data';
+            obj.hButton_Erase.Text = obj.sLabel_Button_Erase;
             obj.hButton_Erase.Enable = 'On';
             obj.hButton_Erase.ButtonPushedFcn = @obj.callbackEraseData;
             
@@ -591,7 +591,7 @@ classdef olMEGA_DataExtraction < handle
                 2*obj.nDivision_Vertical + obj.nButtonHeight,...
                 obj.nButtonWidth ,...
                 obj.nButtonHeight];
-            obj.hButton_Load.Text = 'Load Data';
+            obj.hButton_Load.Text = obj.sLabel_Button_Load;
             obj.hButton_Load.Enable = 'On';
             obj.hButton_Load.ButtonPushedFcn = @obj.callbackLoadData;
             
@@ -602,7 +602,7 @@ classdef olMEGA_DataExtraction < handle
                 2*obj.nDivision_Vertical + obj.nButtonHeight,...
                 obj.nButtonWidth ,...
                 obj.nButtonHeight];
-            obj.hButton_KillApp.Text = 'KillApp';
+            obj.hButton_KillApp.Text = obj.sLabel_Button_Kill;
             obj.hButton_KillApp.Enable = 'On';
             obj.hButton_KillApp.ButtonPushedFcn = @obj.callbackKillApp;
             
@@ -634,7 +634,7 @@ classdef olMEGA_DataExtraction < handle
             obj.hButton_Left.Icon = obj.sFile_Icon_Arrow_left;
             obj.hButton_Left.ButtonPushedFcn = @obj.callbackLeft;
             obj.hButton_Left.Enable = 'Off';
-
+            
             obj.hButton_Right = uibutton(obj.hTab6);
             obj.hButton_Right.Position = [nSpaceH + 2 * obj.nButtonViewControl_Width + 2 * nPixSpace, ...
                 nSpaceV + obj.nButtonViewControl_Height + 1 * nPixSpace, ...
@@ -643,7 +643,7 @@ classdef olMEGA_DataExtraction < handle
             obj.hButton_Right.Icon = obj.sFile_Icon_Arrow_right;
             obj.hButton_Right.ButtonPushedFcn = @obj.callbackRight;
             obj.hButton_Right.Enable = 'Off';
-          
+            
             obj.hButton_Max = uibutton(obj.hTab6);
             obj.hButton_Max.Position = [nSpaceH + 1 * obj.nButtonViewControl_Width + 1 * nPixSpace, ...
                 nSpaceV + 2 * obj.nButtonViewControl_Height + 2 * nPixSpace, ...
@@ -661,7 +661,7 @@ classdef olMEGA_DataExtraction < handle
             obj.hButton_Min.Icon = obj.sFile_Icon_Arrow_min;
             obj.hButton_Min.ButtonPushedFcn = @obj.callbackMin;
             obj.hButton_Min.Enable = 'Off';
-      
+            
             obj.hButton_Home = uibutton(obj.hTab6);
             obj.hButton_Home.Position = [nSpaceH + 1 * obj.nButtonViewControl_Width + 1 * nPixSpace, ...
                 nSpaceV + 1 * obj.nButtonViewControl_Height + 1 * nPixSpace, ...
@@ -693,14 +693,18 @@ classdef olMEGA_DataExtraction < handle
         
         function [] = callbackMax(obj, ~, ~)
             
-            obj.nMagnification = obj.nMagnification + 1;
-            tmpDyn = diff(obj.hAxes.XLim);
-            tmpMean = mean(obj.hAxes.XLim);
-            tmpXLimNew = [tmpMean - 0.5*tmpDyn/obj.nMagFactor, tmpMean + 0.5*tmpDyn/obj.nMagFactor];
-            
-            obj.hAxes.XLim = tmpXLimNew;
-            obj.vAusschnitt = tmpXLimNew;
-            obj.setAnnotations();
+            if (obj.hAxes.XTick(2) - obj.hAxes.XTick(1)) > 2*60*1000
+                
+                obj.nMagnification = obj.nMagnification + 1;
+                tmpDyn = diff(obj.hAxes.XLim);
+                tmpMean = mean(obj.hAxes.XLim);
+                tmpXLimNew = [tmpMean - 0.5*tmpDyn/obj.nMagFactor, tmpMean + 0.5*tmpDyn/obj.nMagFactor];
+                
+                obj.hAxes.XLim = tmpXLimNew;
+                obj.vAusschnitt = tmpXLimNew;
+                obj.setAnnotations();
+                
+            end
             
         end
         
@@ -773,34 +777,20 @@ classdef olMEGA_DataExtraction < handle
         end
         
         function [] = setAnnotations(obj)
-           
+            
             obj.hText_Quest.Position = [obj.hAxes.XLim(1) + (obj.hAxes.XLim(2) - obj.hAxes.XLim(1)) * 0.01, 0.45, 0];
             obj.hText_Display.Position = [obj.hAxes.XLim(1) + (obj.hAxes.XLim(2) - obj.hAxes.XLim(1)) * 0.01, 0.35, 0];
             obj.hText_PSD.Position = [obj.hAxes.XLim(1) + (obj.hAxes.XLim(2) - obj.hAxes.XLim(1)) * 0.01, 0.25, 0];
             obj.hText_RMS.Position = [obj.hAxes.XLim(1) + (obj.hAxes.XLim(2) - obj.hAxes.XLim(1)) * 0.01, 0.15, 0];
             obj.hText_ZCR.Position = [obj.hAxes.XLim(1) + (obj.hAxes.XLim(2) - obj.hAxes.XLim(1)) * 0.01, 0.05, 0];
             
-            tmpTicks = linspace(obj.hAxes.XLim(1), obj.hAxes.XLim(2), 5);
-            cTmpTicks = timeMsToString(tmpTicks);
-            for iTick = 1 : length(cTmpTicks)
-                cTmpTicks{iTick} = cTmpTicks{iTick}(1 : strfind(cTmpTicks{iTick}, '.') - 1);
-            end
-            if (obj.hAxes.XLim(1) == 0)
-                cTmpTicks{1} = '0';
-            end
-            tmpTicks = str2double(cTmpTicks) * 60 * 60 * 1000;
-            obj.hAxes.XTick = tmpTicks;
-            cTmpTicks = timeMsToString(tmpTicks);
+            vXTicks = linspace(obj.hAxes.XLim(1), obj.hAxes.XLim(2), 5);
+            obj.hAxes.XTick = vXTicks;
+            obj.hAxes.XTickLabel = formatTime(vXTicks);
+            obj.hAxes.XTick(1) = obj.hAxes.XLim(1) + 0.05 *diff (obj.hAxes.XLim);
+            obj.hAxes.XTick(end) = obj.hAxes.XLim(2) - 0.05 *diff (obj.hAxes.XLim);
             
-            for iTick = 1 : length(tmpTicks)
-                cTmpTicks{iTick} = [cTmpTicks{iTick}, 'h'];
-            end
-            
-            obj.hAxes.XTickLabel = cTmpTicks;
-            
-            if (obj.hAxes.XLim(1) == 0)
-               obj.hAxes.XTick(1) =  (obj.hAxes.XLim(2) - obj.hAxes.XLim(1)) * 0.01;
-            end
+            xtickangle(obj.hAxes, 0);
             
         end
         
@@ -941,6 +931,22 @@ classdef olMEGA_DataExtraction < handle
             
             [sFolder] = uigetdir();
             if sFolder == 0
+                return;
+            end
+            
+            % Check whether necessary content is available
+            stDir = dir(sFolder);
+            stDir(1:2) = [];
+            vFolders = zeros(2, 1);
+            for iDir = 1 : length(stDir)
+                if contains(stDir(iDir).name, '_AkuData')
+                    vFolders(1) = 1;
+                elseif contains(stDir(iDir).name, '_Quest')
+                    vFolders(2) = 1;
+                end
+            end
+            if mean(vFolders) ~= 1
+                errordlg('User data was not found in directoy.', 'No data found');
                 return;
             end
             
@@ -1878,7 +1884,7 @@ classdef olMEGA_DataExtraction < handle
             configStruct.upperThresholdRMS = 90; % -6 dB
             configStruct.lowerThresholdRMS = 2; % -70 dB
             configStruct.errorTolerance = 0.05; % 5 percent
-     
+            
             validatesubject(obj, configStruct);
             load([obj.stSubject.Folder, filesep, obj.stSubject.Name]);
             
@@ -1912,14 +1918,23 @@ classdef olMEGA_DataExtraction < handle
                 
                 % PSD
                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1);
+                if isnan(cError{:})
+                    cError = {1};
+                end
                 p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
                 p.LineStyle = 'none';
                 % RMS
                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+2
+                if isnan(cError{:})
+                    cError = {1};
+                end
                 p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
                 p.LineStyle = 'none';
                 % ZCR
                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+3
+                if isnan(cError{:})
+                    cError = {1};
+                end
                 p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
                 p.LineStyle = 'none';
                 
@@ -1942,7 +1957,7 @@ classdef olMEGA_DataExtraction < handle
                     end
                 end
             else
-                sFolderQuest = [obj.stSubject.Folder, filesep, obj.stSubject.Name '_Quest']; 
+                sFolderQuest = [obj.stSubject.Folder, filesep, obj.stSubject.Name '_Quest'];
             end
             
             % list of all questionnaires
@@ -1951,7 +1966,7 @@ classdef olMEGA_DataExtraction < handle
             vQuestTimes = zeros(length(stQuest), 1);
             
             for iQuest = 1 : length(stQuest)
-            
+                
                 % parse questionnaire
                 xml = xmlread([sFolderQuest filesep stQuest(iQuest).name]);
                 document = parse_xml(xml);
@@ -1960,19 +1975,19 @@ classdef olMEGA_DataExtraction < handle
                 else
                     record = document.children{1}.children{2};
                 end
-
+                
                 for iChild = 1 : length(record.children)
-
+                    
                     if strcmp(fieldnames(record.children{iChild}.attributes), 'start_date')
                         sDate = [record.children{iChild}.attributes.start_date, '.', '000'];
                         vQuestTimes(iQuest) = stringToTimeMs(sDate) - nMinTime;
                     end
-
+                    
                 end
-
+                
                 % Plot Questionaire times
                 plot(obj.hAxes, vQuestTimes(iQuest) * [1, 1], [0.4, 0.5], 'k');
-        
+                
             end
             
             % Print Display Uptime
@@ -1980,7 +1995,7 @@ classdef olMEGA_DataExtraction < handle
             
             % Print Battery status
             if ~isempty(find(vLevelBattery > 1))
-               vLevelBattery = vLevelBattery / 100; 
+                vLevelBattery = vLevelBattery / 100;
             end
             plot(obj.hAxes, vTimeBattery, (0.5 + 0.5 * vLevelBattery) * 0.98, 'k');
             
@@ -2020,17 +2035,12 @@ classdef olMEGA_DataExtraction < handle
             
             obj.hAxes.YLim = [0,1];
             obj.hAxes.XLim = [nTimeMin, nTimeMax];
-            [cTime, ~] = timeMsToString(obj.hAxes.XTick);
-            vTimeMarks = [ceil(str2double(cTime{1})), floor(str2double(cTime{end}))];
-            vTime = round(linspace(vTimeMarks(1), vTimeMarks(2), 4));
             
-            cTime = {};
-            for iTime = 1:length(vTime)
-                cTime{iTime} = [num2str(vTime(iTime)),'h'];
-            end
-            
-            obj.hAxes.XTick = vTime*60*60*1000;
-            obj.hAxes.XTickLabel = cTime;
+            vXTicks = linspace(obj.hAxes.XLim(1), obj.hAxes.XLim(2), 5);
+            obj.hAxes.XTick = vXTicks;
+            obj.hAxes.XTickLabel = formatTime(vXTicks);
+            obj.hAxes.XTick(1) = obj.hAxes.XLim(1) + 0.05 *diff (obj.hAxes.XLim);
+            obj.hAxes.XTick(end) = obj.hAxes.XLim(2) - 0.05 *diff (obj.hAxes.XLim);
             
             obj.hAxes.YTick = [];
             obj.hAxes.YTickLabel = {};
@@ -2039,19 +2049,13 @@ classdef olMEGA_DataExtraction < handle
             obj.hAxes.Layer = 'Top';
             obj.hAxes.XRuler.Axle.LineStyle = 'none';
             obj.hAxes.YRuler.Axle.LineStyle = 'none';
-            if obj.hAxes.XTick(1) < 100
-                obj.hAxes.XTick(1) = 0.02 * (obj.hAxes.XTick(end) - obj.hAxes.XTick(1));
-            else
-                obj.hAxes.XTick = [0.02 * (obj.hAxes.XTick(end) - obj.hAxes.XTick(1)), obj.hAxes.XTick];
-                obj.hAxes.XTickLabel = [{'0h'}; obj.hAxes.XTickLabel];
-                
-            end
-          
             obj.hAxes.XRuler.TickDirection = 'Out';
             
             obj.nTimeWindow = obj.hAxes.XLim(2);
             obj.vXLim_orig = [0, obj.nTimeWindow];
             obj.vAusschnitt = obj.vXLim_orig;
+            
+            xtickangle(obj.hAxes, 0);
             
             % sort proportions
             

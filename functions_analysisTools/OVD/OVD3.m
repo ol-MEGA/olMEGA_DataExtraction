@@ -1,8 +1,9 @@
-function [stDataReal] = OVD3(Cxy, Pxx, Pyy, fs)
+function [stDataReal] = OVD3(Cxy, Pxx, Pyy, fs, mRMS)
 % Cxy - cross power spectral density
 % Pxx, Pyy - auto power spectral density
 % data format: time x frequency
 % fs - sampling frequency
+% optional mRMS - rms vector in dB SPL
 
 % number of frames
 nFrames = size(Cxy,1);
@@ -14,8 +15,6 @@ nFreqBins = size(Cxy,2);
 isprivacy = true;
 stDataReal.Coh = zeros(nFrames, nFreqBins);
 nFFT = 2*(nFreqBins - 1);
-vFreqRange = [140 1500];
-vFreqBins = round(vFreqRange./fs*nFFT); % 5:40. 6:64 17:43
 
 % Think of assessing the OVD per minute
 % 480 frames is one minute
@@ -23,9 +22,12 @@ curCxy = zeros(nFrames, nFreqBins);
 curPxx = zeros(nFrames, nFreqBins);
 curPyy = zeros(nFrames, nFreqBins);
 
-
+%% NS
 MIN_COH = 0.1;
 MIN_RMS = 10^(-40/20);
+
+vFreqRange = [400 1000];
+vFreqBins = round(vFreqRange./fs*nFFT); 
 
 % smoothing PSD data for 3 adjacent frames respectively
 for iFrame = 1:nFrames
@@ -48,10 +50,16 @@ end
 % on noise and not on levels with speech
 [A_log,A_lin] = a_weighting(nFFT,fs);
 
-% Divide by 4 as a scaling to RMS feature; has to be checked if real
-% features are used
-stDataReal.curRMSfromPxx = sqrt(sum((fs/nFFT).*curPxx, 2))./4;
-stDataReal.curRMS_A = sqrt(sum((fs/nFFT).*curPxx'.*A_lin/10^(-2/20)))./4;
+if ~exist('mRMS', 'var')
+    % Divide by 4 as a scaling to RMS feature; has to be checked if real
+    % features are used
+    stDataReal.curRMSfromPxx = sqrt(sum((fs/nFFT).*curPxx, 2))./4;
+    stDataReal.curRMS_A = sqrt(sum((fs/nFFT).*curPxx'.*A_lin/10^(-2/20)))./4;
+else
+    stDataReal.curRMSfromPxx = mRMS(:,1);
+    
+    MIN_RMS = 45; % dB SPL
+end
 
 % Calculate coherence
 stDataReal.Coh = curCxy./(sqrt(curPxx.*curPyy) + eps);
@@ -83,9 +91,10 @@ end
 stDataReal.movAvgSNR = movmax(stDataReal.meanLogSNRPrio,stDataReal.winLen);
 
 % This parameters are set dependent on 'overall level'
-stDataReal.a_cohe = 0.3.*ones(nFrames, 1);
-stDataReal.a_rms = 0.15.*ones(nFrames, 1);
+stDataReal.a_rms = 0.15.*ones(nFrames, 1); % NS
 stDataReal.a_rms(stDataReal.movAvgSNR >= 30) = 0.2;
+
+stDataReal.a_cohe = 0.3.*ones(nFrames, 1);
 stDataReal.a_cohe(stDataReal.movAvgSNR >= 20) = 0.5;
 stDataReal.a_cohe(stDataReal.movAvgSNR >= 30) = 0.4;
 stDataReal.a_cohe(stDataReal.movAvgSNR >= 40) = 0.5;
@@ -105,4 +114,3 @@ stDataReal.adapThreshRMS = max(stDataReal.adapThreshRMS, MIN_RMS);
 stDataReal.vOVS = (stDataReal.meanCoheTimesCxy >= stDataReal.adapThreshCohe ...
                  &  stDataReal.curRMSfromPxx >= stDataReal.adapThreshRMS);
 end
-

@@ -963,7 +963,7 @@ classdef olMEGA_DataExtraction < handle
                 end
             end
             if mean(vFolders) ~= 1
-                errordlg('No user data was found in directoy.', 'No data found');
+                errordlg('No user data was found in directory.', 'No data found');
                 return;
             end
             

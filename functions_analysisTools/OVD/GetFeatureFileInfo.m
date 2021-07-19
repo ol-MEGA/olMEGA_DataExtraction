@@ -34,6 +34,7 @@ if( fid ) && fid ~= -1
     while ~feof(fid)
         
         if nBlocks == 0
+            % START: Determination of the protocol version
             headerSizes = [29, 36, 48];
             fseek(fid, 0, 'eof');
             fileSize = ftell(fid);
@@ -47,6 +48,7 @@ if( fid ) && fid ~= -1
                 vFrames = double(fread( fid, 1, 'int32', cMachineFormat{:}));
                 nDim = double(fread( fid, 1, 'int32', cMachineFormat{:}));
             end
+            % END: Determination of the protocol version
             stInfo.FrameSizeInSamples = double( fread(fid, 1, 'int32', cMachineFormat{:}));
             stInfo.HopSizeInSamples = double( fread(fid, 1, 'int32', cMachineFormat{:}));
             stInfo.fs = double( fread(fid, 1, 'int32', cMachineFormat{:}));

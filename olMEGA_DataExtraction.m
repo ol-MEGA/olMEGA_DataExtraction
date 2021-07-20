@@ -114,7 +114,7 @@ classdef olMEGA_DataExtraction < handle
         vStateNumSorted;
         
         hFig1;
-        hFig2;
+        hLegend;
         hFig3;
         hTab1;
         hTab2;
@@ -170,18 +170,8 @@ classdef olMEGA_DataExtraction < handle
         
         % Legend Figure
         hButton_Legend_Close;
-        hPatch_Legend_Charging;
-        hPatch_Legend_Connecting;
-        hPatch_Legend_Error;
-        hPatch_Legend_Proposing;
-        hPatch_Legend_Quest;
-        hPatch_Legend_Running;
-        hLabel_Legend_Charging;
-        hLabel_Legend_Connecting;
-        hLabel_Legend_Error;
-        hLabel_Legend_Proposing;
-        hLabel_Legend_Quest;
-        hLabel_Legend_Running;
+        hPatch_Legend;
+        hLabel_Legend;
         
         % Part Length Figure
         hButton_PartLength_Enter;
@@ -1723,6 +1713,8 @@ classdef olMEGA_DataExtraction < handle
             cLog = fileread(fullfile(obj.stSubject.Folder,sFileName));
             cLog = splitlines(cLog);
             
+            obj.vProportions = zeros(obj.nStates, 1);
+            
             bIncludeAll = 0;
             bNormalise = 1;
             
@@ -1955,22 +1947,28 @@ classdef olMEGA_DataExtraction < handle
                 
                 % PSD
                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1);
-                if isnan(cError{:})
+                if isnan(sum(cError{:}))
                     cError = {1};
+                elseif isempty(cError{:})
+                    cError = {0};
                 end
                 p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
                 p.LineStyle = 'none';
                 % RMS
                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+2
-                if isnan(cError{:})
+                if isnan(sum(cError{:}))
                     cError = {1};
+                elseif isempty(cError{:})
+                    cError = {0};
                 end
                 p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
                 p.LineStyle = 'none';
                 % ZCR
                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+3
-                if isnan(cError{:})
+                if isnan(sum(cError{:}))
                     cError = {1};
+                elseif isempty(cError{:})
+                    cError = {0};
                 end
                 p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
                 p.LineStyle = 'none';
@@ -2081,7 +2079,7 @@ classdef olMEGA_DataExtraction < handle
             obj.hText_ZCR.Margin = 0.1;
             
             % Generate Figure Legend
-            obj.hHotspot_Legend = patch(obj.hAxes, vTimeBluetooth([1,1,end,end]),[0.5,1,1,0.5], [0.5,0.5,0.5], 'FaceAlpha',0.01);
+            obj.hHotspot_Legend = patch(obj.hAxes, obj.hAxes.XLim([1,1,end,end]),[0.5,1,1,0.5], [0.5,0.5,0.5], 'FaceAlpha',0.01);
             obj.hHotspot_Legend.LineStyle = 'none';
             obj.hHotspot_Legend.ButtonDownFcn = @obj.callbackLegend;
             
@@ -2169,15 +2167,15 @@ classdef olMEGA_DataExtraction < handle
             
             vPercentage = round(obj.vProportions_Sorted/sum(obj.vProportions_Sorted)*1000)/10;
             
-            obj.hFig2 = uifigure();
-            obj.hFig2.Position = [(obj.vScreenSize(3)-obj.nWidthLegend)/2-50,...
+            obj.hLegend = uifigure();
+            obj.hLegend.Position = [(obj.vScreenSize(3)-obj.nWidthLegend)/2-50,...
                 (obj.vScreenSize(4)-obj.nHeightLegend)/2-50, obj.nWidthLegend, obj.nHeightLegend];
-            obj.hFig2.Name = obj.sTitleFig2;
-            obj.hFig2.Resize = 'Off';
+            obj.hLegend.Name = obj.sTitleFig2;
+            obj.hLegend.Resize = 'Off';
             
             % Close button
             
-            obj.hButton_Legend_Close = uibutton(obj.hFig2);
+            obj.hButton_Legend_Close = uibutton(obj.hLegend);
             obj.hButton_Legend_Close.Position =...
                 [(obj.nWidthLegend-obj.nButtonWidth)/2,...
                 obj.nDivision_Vertical, obj.nButtonWidth, obj.nButtonHeight];
@@ -2186,19 +2184,22 @@ classdef olMEGA_DataExtraction < handle
             
             % Patches and Precents
             
-            nStates = length(obj.vProportions);
-            for iState = 1:nStates
+            for iState = 1 : obj.nStates
                 
-                obj.hPatch_Legend_Charging = uilabel(obj.hFig2);
-                obj.hPatch_Legend_Charging.Position = [50,20+(2+iState)*obj.nDivision_Vertical+obj.nButtonHeight+(iState-1)*obj.nPatchHeight,...
+                obj.hPatch_Legend = uilabel(obj.hLegend);
+                obj.hPatch_Legend.Position = [50,20+(2+iState)*obj.nDivision_Vertical+obj.nButtonHeight+(iState-1)*obj.nPatchHeight,...
                     obj.nPatchWidth, obj.nPatchHeight];
-                obj.hPatch_Legend_Charging.Text = '';
-                obj.hPatch_Legend_Charging.BackgroundColor = obj.mColors(obj.vStateNumSorted(iState),:);
+                obj.hPatch_Legend.Text = '';
+                obj.hPatch_Legend.BackgroundColor = obj.mColors(obj.vStateNumSorted(iState),:);
                 
-                obj.hLabel_Legend_Charging = uilabel(obj.hFig2);
-                obj.hLabel_Legend_Charging.Position = [110,20+(2+iState)*obj.nDivision_Vertical+obj.nButtonHeight+(iState-1)*obj.nPatchHeight,...
+                if obj.vStateNumSorted(iState) == 7
+                    obj.hPatch_Legend.BackgroundColor = obj.mColors(8, :);
+                end
+                
+                obj.hLabel_Legend = uilabel(obj.hLegend);
+                obj.hLabel_Legend.Position = [110,20+(2+iState)*obj.nDivision_Vertical+obj.nButtonHeight+(iState-1)*obj.nPatchHeight,...
                     obj.nLegendLabelWidth, obj.nLegendLabelHeight];
-                obj.hLabel_Legend_Charging.Text = sprintf('%s (%.1f%%)',obj.cStates{obj.vStateNumSorted(iState)}, vPercentage(iState));
+                obj.hLabel_Legend.Text = sprintf('%s (%.1f%%)',obj.cStates{obj.vStateNumSorted(iState)}, vPercentage(iState));
                 
             end
             
@@ -2547,8 +2548,9 @@ classdef olMEGA_DataExtraction < handle
         end
         
         function [] = callbackLegendClose(obj, ~, ~)
-            close(obj.hFig2);
+            close(obj.hLegend);
             obj.hHotspot_Legend.Visible = 'On';
+            pause(0.1);
         end
         
         function [] = callbackAnalyseData(obj, ~, ~)

@@ -1,28 +1,39 @@
-% Script to test the function getSubjectiveData.m 
+function [eqd]=EQD(x,nBlocks)
+% function to calculate the Empirischen Quartilsdispersionskoeffizient -EQD
+% Usage [eqd]=EQD(x,nBlocks)
+%
+% Parameters
+% ----------
+% x - input data vector, e.g. RMS values
+%
+% nBlocks - number of time frames
+%
+% Returns
+% -------
+% eqd - vector containing the calculated EQD
+%
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF 
+% formula according to https://de.wikipedia.org/wiki/Variationskoeffizient  
 % Version History:
-% Ver. 0.01 initial create 01-Oct-2019 	JP
+% Ver. 0.01 initial create (empty) 18-Nov-2019  JP
 
-% clear; 
-close all;
+eqd = NaN(nBlocks, 2);
+for iLoop = 1:nBlocks
 
-% path to data folder (needs to be customized)
-szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
+    % adjust indices
+    vIdx = 1+(iLoop-1)*10 : iLoop*10;
+    
+    if vIdx(end) > length(x)
+        vIdx(vIdx > length(x)) = [];
+    end
+    
+    % select 10 adjacent frames
+    mBlock = x(vIdx, :);
 
-% get all subject directories
-subjectDirectories = dir(szBaseDir);
+    % calculate EQD
+    eqd(iLoop, :) = ((prctile(mBlock, 75)-prctile(mBlock, 25))./ median(mBlock))';
 
-% get one subject directoy
-szCurrentFolder = subjectDirectories(10).name;
-
-% get object
-% [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
-
-% get all dates of one subject
-caDates = getdatesonesubject(obj);
-
-
-[hasSubjectiveData] = getSubjectiveData(obj);
+end
 
 
 %--------------------Licence ---------------------------------------------

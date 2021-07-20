@@ -106,6 +106,8 @@ else % Data results from "IHAB" study
     sFolderQuest = [sFolder, filesep, obj.stSubject.Name, '_Quest'];
     stDir = dir(sFolderQuest);
     stDir(1:2) = [];
+    isInValidFile = arrayfun(@(x)(contains(x.name, '._')), stDir);
+    stDir(isInValidFile) = [];
     
     if ~isempty(stDir)
         

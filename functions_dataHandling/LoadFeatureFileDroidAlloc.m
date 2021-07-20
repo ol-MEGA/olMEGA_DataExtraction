@@ -39,19 +39,6 @@ cMachineFormat = {0, 'b'};
 % Get information about feature file for preallocation
 stInfo = GetFeatureFileInfo(szFilename, 0);
 
-% Get file name without the path
-[~, splitFileName] = fileparts(szFilename);
-
-% Get parts of file name
-numbersFromFilename = regexpi(splitFileName,'_','split');
-numFilenameParts = numel(numbersFromFilename);
-
-if numFilenameParts < 4
-    isOldFormat = true;
-else
-    isOldFormat = false;
-end
-
 if (stInfo.nFrames>60*stInfo.fs)
     mFeatureData = [];
     mFrameTime = [];
@@ -68,20 +55,7 @@ fid = fopen( szFilename, 'rb' );
 % If the file could be opened successfully...
 %if fid >= 1 && stInfo.nFrames == 480
 if (fid)
-    
-    if isOldFormat
-        nBytesHeader = 29;
-    else
-        nBytesHeader = 36;
-    end
-    
-    if nargin > 1;
-        
-        if isOldFormat
-            nBytesHeader = 29;
-        else
-            nBytesHeader = 36;
-        end
+    if nargin > 1
         nBytesFrame = stInfo.nDimensions * 4;
         
         if numel(start) > 1
@@ -94,7 +68,7 @@ if (fid)
         idxStop = stInfo.nBlocks;
         
         nFrames = sum(stInfo.vFrames(idxStart:end));
-        nSkipBytes = sum(stInfo.vFrames(1:idxStart-1)) * nBytesFrame + nBytesHeader * (idxStart-1);
+        nSkipBytes = sum(stInfo.vFrames(1:idxStart-1)) * nBytesFrame + stInfo.nBytesHeader * (idxStart-1);
         
         % jump to 1st block to read
         fseek(fid, nSkipBytes, -1);
@@ -126,7 +100,7 @@ if (fid)
         % convert blocktime to serial date
         blocktime = datenum(stInfo.mBlockTime(iBlock,:));
         
-        fseek(fid, nBytesHeader, 0);  % skip header
+        fseek(fid, stInfo.nBytesHeader, 0);  % skip header
         
         tempData = fread(fid, [stInfo.nDimensions, stInfo.vFrames(iBlock)], 'float', cMachineFormat{:});
         
@@ -170,7 +144,7 @@ end
 % THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 % EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 % OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-% IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+% IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HERS BE LIABLE FOR ANY
 % CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 % TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 % SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

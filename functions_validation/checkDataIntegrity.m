@@ -6,11 +6,11 @@
 
 function checkDataIntegrity(obj)
 
-%szTestSubjectName = struct('FolderName', obj.stSubject.Folder, 'SubjectID', obj.stSubject.Name);
-
 szCurrentDir = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData' ];
 
 AllDataEntries = listFiles(szCurrentDir,'*.feat');
+isInValidFile = arrayfun(@(x)(contains(x.name, '._')), AllDataEntries);
+AllDataEntries(isInValidFile) = [];
 SizeOfData = cell2mat({AllDataEntries.bytes});
 [NrOfOccurances,Values] = hist(SizeOfData,unique(SizeOfData));
 [~,idxSort] = sort(NrOfOccurances,'descend');

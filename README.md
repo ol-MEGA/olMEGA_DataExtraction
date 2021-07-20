@@ -3,7 +3,7 @@
 # olMEGA_DataExtraction #
 
 Matlab tool for automatic data extraction (and analysis) from smartphone.  
-Version 1.1 
+Version 2.0 
 
 ### Prerequisites: ###
 * Matlab 2018b (or later)
@@ -17,6 +17,9 @@ Version 1.1
 olMEGA_DataExtraction()
 ```
 
+
+### For IHAB study only: ###
+
 * Command Line:
 
 ```matlab
@@ -28,8 +31,6 @@ olMEGA_DataExtraction()
 ```matlab
 [obj] = olMEGA_DataExtraction([Path to data folder], [#EMA run]);
 ```
-
-### For IHAB study only: ###
 
 * For complete analysis and PDF outptut:
 

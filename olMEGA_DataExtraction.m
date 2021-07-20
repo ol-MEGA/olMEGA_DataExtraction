@@ -58,7 +58,7 @@ classdef olMEGA_DataExtraction < handle
         sStateQuest = 'Questionnaire';
         sStateRunning = 'Running';
         cStates = {'Charging', 'Error', 'Proposing',...
-            'Connecting', 'Running', 'Quest'};
+            'Connecting', 'Running', 'Quest', 'Offline'};
         
         sMessage_Calculating = 'Calculating';
         sMessage_DataFormat = 'Unsupported data format';
@@ -107,9 +107,10 @@ classdef olMEGA_DataExtraction < handle
         hProgress;
         hProgressCommandLine;
         
-        vProportions = zeros(6,1);
+        nStates = 7;
+        vProportions;
         vProportions_Sorted;
-        vStateNum = 1:6;
+        vStateNum;
         vStateNumSorted;
         
         hFig1;
@@ -200,7 +201,7 @@ classdef olMEGA_DataExtraction < handle
         vScreenSize;
         nHeightFig1 = 480;
         nWidthFig1 = 640;
-        nHeightLegend = 400;
+        nHeightLegend = 440;
         nWidthLegend = 300;
         nHeight_PartLength;
         nWidth_PartLength;
@@ -215,6 +216,7 @@ classdef olMEGA_DataExtraction < handle
         isDone;
         prefix;
         
+        sMinMatlabVersion = '9.10.0';
         nMobileVersion;
         sMobileDir;
     end
@@ -225,6 +227,8 @@ classdef olMEGA_DataExtraction < handle
             addpath(genpath(pwd));
             rmpath('legacy');
             rmpath('.git');
+            
+  
             
             %             checkPrerequisites();
             
@@ -296,6 +300,9 @@ classdef olMEGA_DataExtraction < handle
                 'Analysis' , []);
             
             obj.mColors = [getColors(); 0.7*ones(1, 3)];
+            
+            obj.vProportions = zeros(obj.nStates, 1);
+            obj.vStateNum = 1 : obj.nStates;
             
             obj.getPreferencesFromFile();
             
@@ -1701,7 +1708,7 @@ classdef olMEGA_DataExtraction < handle
             obj.hAxes.Position = [0,0,obj.hTab5.Position(3), obj.hTab5.Position(4)-20];
             obj.hAxes.Visible = 'Off';
             
-            if ~verLessThan('matlab', '9.10.0')
+            if ~verLessThan('matlab', obj.sMinMatlabVersion)
                 obj.hAxes.Toolbar.Visible = 'Off';
             end
             
@@ -1805,7 +1812,7 @@ classdef olMEGA_DataExtraction < handle
                     
                 elseif contains(sLog, sOccClose)
                     vTimeState(end+1) = stringToTimeMs(sLogTime);
-                    vState(end+1) = 0;
+                    vState(end+1) = 7;
                     vTimeDisplay(end+1) = stringToTimeMs(sLogTime);
                     vDisplay(end+1) = 0;
                     
@@ -1854,9 +1861,9 @@ classdef olMEGA_DataExtraction < handle
                         vTimeState(iState+1), vTimeState(iState+1)];
                     vY = [0.5, 0.98, 0.98, 0.5];
                     
-                    if vState(iState) == 0
+                    if vState(iState) == 7
                         p = patch(obj.hAxes, vX, vY, obj.mColors(8,:));
-                        %                         obj.vProportions(1) = obj.vProportions(1) + vX(end)-vX(1);
+                        obj.vProportions(7) = obj.vProportions(7) + vX(end) - vX(1);
                     elseif vState(iState) == 1
                         p = patch(obj.hAxes, vX, vY, obj.mColors(1,:));
                         obj.vProportions(1) = obj.vProportions(1) + vX(end)-vX(1);
@@ -2090,9 +2097,11 @@ classdef olMEGA_DataExtraction < handle
             
             obj.hAxes.Box = 'Off';
             obj.hAxes.Layer = 'Top';
-            obj.hAxes.XRuler.Axle.LineStyle = 'none';
-            obj.hAxes.YRuler.Axle.LineStyle = 'none';
-            obj.hAxes.XRuler.TickDirection = 'Out';
+            if ~verLessThan('matlab', obj.sMinMatlabVersion)
+                obj.hAxes.XRuler.Axle.LineStyle = 'none';
+                obj.hAxes.YRuler.Axle.LineStyle = 'none';
+                obj.hAxes.XRuler.TickDirection = 'Out';
+            end
             
             obj.nTimeWindow = obj.hAxes.XLim(2);
             obj.vXLim_orig = [0, obj.nTimeWindow];
@@ -2173,7 +2182,7 @@ classdef olMEGA_DataExtraction < handle
             
             % Patches and Precents
             
-            nStates = 6;
+            nStates = length(obj.vProportions);
             for iState = 1:nStates
                 
                 obj.hPatch_Legend_Charging = uilabel(obj.hFig2);

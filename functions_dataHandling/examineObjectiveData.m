@@ -1,15 +1,8 @@
 function [] = examineObjectiveData(obj)
 
-% Check if subject exists and get the folder name
-
-%stSubject = struct('FolderName', obj.stSubject.Folder, 'SubjectID', obj.stSubject.Name);
-
 
 %% Generate questionnaires table
-
-
 %fprintf('\t.importing questionnaires -');
-
 
 %obj.hProgressCommandLine.startTimer();
 %import_EMA2018(obj);
@@ -24,9 +17,11 @@ fprintf('\t.checking data integrity -');
 
 % First: Check for broken data
 obj.hProgressCommandLine.startTimer();
-checkDataIntegrity(obj);
+corruptTxtFile = fullfile(obj.stSubject.Folder, 'corrupt_files.txt');
+if ~exist(corruptTxtFile,'file')
+    checkDataIntegrity(obj);
+end
 obj.hProgressCommandLine.stopTimer();
-
 
 
 % These parameters are for the validation check
@@ -43,8 +38,6 @@ fprintf('\t.validating subject -');
 obj.hProgressCommandLine.startTimer();
 validatesubject(obj, configStruct);
 obj.hProgressCommandLine.stopTimer();
-
-
 end
 
 % EOF

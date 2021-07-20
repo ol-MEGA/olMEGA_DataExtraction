@@ -197,11 +197,11 @@ classdef olMEGA_DataExtraction < handle
             
 %             checkPrerequisites();
             
-            if obj.isParallel && isempty(gcp('nocreate')) && checkParallelToolBox
-                myCluster = parcluster();
-                myCluster.NumWorkers = 12;
-                myPool = parpool(myCluster);
-            end
+%             if obj.isParallel && isempty(gcp('nocreate')) && checkParallelToolBox
+%                 myCluster = parcluster();
+%                 myCluster.NumWorkers = 12;
+%                 myPool = parpool(myCluster);
+%             end
             
             obj.nHeight_PartLength = 3*obj.nDivision_Vertical + 2*obj.nButtonHeight;
             obj.nWidth_PartLength = 3*obj.nDivision_Horizontal + 2*obj.nButtonWidth;
@@ -1014,6 +1014,8 @@ classdef olMEGA_DataExtraction < handle
             
             stQuestionnaires = dir(sQuestName);
             stQuestionnaires(1:2) = [];
+            idxInValid = arrayfun(@(x)(contains(x.name, '._')), stQuestionnaires);
+            stQuestionnaires(idxInValid) = [];
             nQuestionnaires = length(stQuestionnaires);
             if nQuestionnaires >= 0
                 if ~obj.isCommandLine
@@ -1032,6 +1034,8 @@ classdef olMEGA_DataExtraction < handle
             
             stFeatures = dir([sFolder, filesep, cSubjectData{1}, '_AkuData']);
             stFeatures(1:2) = [];
+            idxInValid = arrayfun(@(x)(contains(x.name, '._')), stFeatures);
+            stFeatures(idxInValid) = [];
             nFeatures = length(stFeatures);
             if nFeatures >= 0
                 if ~obj.isCommandLine

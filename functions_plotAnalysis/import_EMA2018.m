@@ -1,4 +1,4 @@
-function [] = import_EMA2018(obj, folder_idx)
+function [] = import_EMA2018(obj, stInfo, folder_idx)
 
 % Import subjects' XML questionnaires data.
 %
@@ -11,6 +11,13 @@ function [] = import_EMA2018(obj, folder_idx)
 %   optional, not required when running individually
 %
 % Author: AGA (c) TGM @ Jade Hochschule applied licence see EOF
+
+% .csv and .mat file name
+csv_mat_file_name = ['Questionnaires_' obj.stSubject.Name];
+
+% if exist([obj.stSubject.Folder filesep csv_mat_file_name '.mat'], 'file')
+%     return;
+% end
 
 % load answers and codes
 load('Answers_EMA2018.mat', 'PossibleAnswers')
@@ -29,9 +36,6 @@ Questionnaires = struct(...
     'AssessDelay', [],...
     'Mood', [],...
     'Activity', []);
-
-% .csv and .mat file name
-csv_mat_file_name = ['Questionnaires_' obj.stSubject.Name];
 
 if obj.isHallo
     sFolderQuest = [obj.stSubject.Folder, filesep, obj.stSubject.Name,'_Mobeval'];
@@ -53,10 +57,18 @@ else
 end
 % list of all questionnaires
 quests_list = dir([sFolderQuest, '/*.xml']);
+idxInValid = arrayfun(@(x)(contains(x.name, '._')), quests_list);
+quests_list(idxInValid) = [];
 
 Questionnaires_idx = 1;
 source_number = 1;
 source_idx = 0;
+
+% % filter day and time
+% vDates = {quests_list.date}';
+% idxDay = isbetween(vDates, stInfo.StartDay + stInfo.StartTime, stInfo.EndDay + stInfo.EndTime);
+% quests_list(~idxDay) = [];
+
 
 % loop over each questionnaire
 for quests_idx = 1 : length(quests_list)
@@ -77,19 +89,21 @@ for quests_idx = 1 : length(quests_list)
         record = document.children{1}.children{2};
     end
     
+    % get number of values in xml
+    nValues = numel(record.children);
     
     if obj.isHallo
         quest_date_1 = datestr(record.children{2}.children{1}(1:10), 'yyyy-mm-dd');
         quest_time_1 = datestr(record.children{2}.children{1}(12:end), 'HH:MM:SS');
         % Using Local Time! If UTC: record.children{3} and
         % record.children{end}
-        quest_date_2 = datestr(record.children{end-1}.children{1}(1:10), 'yyyy-mm-dd');
-        quest_time_2 = datestr(record.children{end-1}.children{1}(12:end), 'HH:MM:SS');
+        quest_date_2 = datestr(record.children{nValues-1}.children{1}(1:10), 'yyyy-mm-dd');
+        quest_time_2 = datestr(record.children{nValues-1}.children{1}(12:end), 'HH:MM:SS');
     else
         quest_date_1 = record.children{2}.attributes.start_date(1:10); % yyyy-mm-dd
         quest_time_1 = record.children{2}.attributes.start_date(end-7:end); % HH:MM:SS
-        quest_date_2 = record.children{31}.attributes.end_date(1:10); % yyyy-mm-dd
-        quest_time_2 = record.children{31}.attributes.end_date(end-7:end); % HH:MM:SS
+        quest_date_2 = record.children{nValues-1}.attributes.end_date(1:10); % yyyy-mm-dd
+        quest_time_2 = record.children{nValues-1}.attributes.end_date(end-7:end); % HH:MM:SS
     end
     
     % starting date and time
@@ -122,7 +136,7 @@ for quests_idx = 1 : length(quests_list)
     Questionnaires(Questionnaires_idx).Duration = char(time_interval);
     
     % start questions
-    for question_idx = 5 : 30
+    for question_idx = 5 : nValues-2
         
         % safety check
         if isfield(record.children{question_idx}.attributes, 'option_ids') == 1
@@ -132,10 +146,7 @@ for quests_idx = 1 : length(quests_list)
             
             % check for single answer
             if length(answer) < 8
-                
                 answer = cell2mat(PossibleAnswers.code(1, strcmp(PossibleAnswers.id, answer)));
-                
-                
             end
             
             % go to specific question

@@ -22,8 +22,7 @@ function [vPredictedVS,vTime]=detectOwnVoiceRandomForest(obj,stDate)
 
 % load trained random forest (cave!)
 szTreeDir = [obj.sFolderMain filesep 'functions_helper'];
-szTreeDir = '/Volumes/Samsung_T5/Forschungsdaten_mit_AUDIO/Bachelorarbeit_Jule_Pohlhausen2019/RandomForests';
-szName = ['GridSearch5Fold' filesep 'RandomForest_100Trees_OVD_PredictorSet4_Fold_3_Cost0.12_MinLeafSize4.mat'];
+szName = 'RandomForest_100Trees_OVD.mat';
 load([szTreeDir filesep szName], 'szVarNames'); % first only names
 szVarNames(end) = [];
 

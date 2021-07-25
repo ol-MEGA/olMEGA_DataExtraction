@@ -13,12 +13,13 @@ szBaseDir = '/Volumes/Samsung_T5/IHAB_1_EMA2018/IHAB_Rohdaten_EMA2018';
 szCurrentFolder = 'NN07IS04_180611_ks';
 
 % get object
-[obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
+[obj] = olMEGA_DataExtraction([szBaseDir filesep szCurrentFolder]);
 
 % get all dates of current subject
 caDates = getdatesonesubject(obj);
 
-plotEMAFingerprint(obj, 'StartDay', caDates(2), 'EndDay', caDates(2),'StartTime', 0, 'EndTime', 24);
+plotEMAFingerprint(obj, 'StartDay', caDates(2), 'EndDay', caDates(2), ...
+    'StartTime', 0, 'EndTime', 24);
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> Jule Pohlhausen

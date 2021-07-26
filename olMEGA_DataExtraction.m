@@ -209,6 +209,9 @@ classdef olMEGA_DataExtraction < handle
         sMinMatlabVersion = '9.10.0';
         nMobileVersion;
         sMobileDir;
+        
+        hTimer;
+        bIsPhoneConnected = false;
     end
     
     methods
@@ -218,15 +221,15 @@ classdef olMEGA_DataExtraction < handle
             rmpath('legacy');
             rmpath('.git');
             
-  
+            
             
             %             checkPrerequisites();
             
-%             if obj.isParallel && isempty(gcp('nocreate')) && checkParallelToolBox
-%                 myCluster = parcluster();
-%                 myCluster.NumWorkers = 12;
-%                 myPool = parpool(myCluster);
-%             end
+            %             if obj.isParallel && isempty(gcp('nocreate')) && checkParallelToolBox
+            %                 myCluster = parcluster();
+            %                 myCluster.NumWorkers = 12;
+            %                 myPool = parpool(myCluster);
+            %             end
             
             obj.nHeight_PartLength = 3*obj.nDivision_Vertical + 2*obj.nButtonHeight;
             obj.nWidth_PartLength = 3*obj.nDivision_Horizontal + 2*obj.nButtonWidth;
@@ -338,8 +341,10 @@ classdef olMEGA_DataExtraction < handle
             end
             
         end
-       
+        
         function [] = gui(obj)
+            
+            obj.hTimer = MobileTimer(obj);
             
             % Main Window
             
@@ -569,7 +574,7 @@ classdef olMEGA_DataExtraction < handle
                 obj.nButtonWidth ,...
                 obj.nButtonHeight];
             obj.hButton_Reboot.Text = obj.sLabel_Button_Reboot;
-            obj.hButton_Reboot.Enable = 'On';
+            obj.hButton_Reboot.Enable = 'Off';
             obj.hButton_Reboot.ButtonPushedFcn = @obj.callbackRebootPhone;
             
             % Button "Erase Data"
@@ -579,7 +584,7 @@ classdef olMEGA_DataExtraction < handle
                 obj.nButtonWidth ,...
                 obj.nButtonHeight];
             obj.hButton_Erase.Text = obj.sLabel_Button_Erase;
-            obj.hButton_Erase.Enable = 'On';
+            obj.hButton_Erase.Enable = 'Off';
             obj.hButton_Erase.ButtonPushedFcn = @obj.callbackEraseData;
             
             % Button "Load Data"
@@ -589,7 +594,7 @@ classdef olMEGA_DataExtraction < handle
                 obj.nButtonWidth ,...
                 obj.nButtonHeight];
             obj.hButton_Load.Text = obj.sLabel_Button_Load;
-            obj.hButton_Load.Enable = 'On';
+            obj.hButton_Load.Enable = 'Off';
             obj.hButton_Load.ButtonPushedFcn = @obj.callbackLoadData;
             
             % Button "Kill App"
@@ -600,7 +605,7 @@ classdef olMEGA_DataExtraction < handle
                 obj.nButtonWidth ,...
                 obj.nButtonHeight];
             obj.hButton_KillApp.Text = obj.sLabel_Button_Kill;
-            obj.hButton_KillApp.Enable = 'On';
+            obj.hButton_KillApp.Enable = 'Off';
             obj.hButton_KillApp.ButtonPushedFcn = @obj.callbackKillApp;
             
             % Text Output Tab 4
@@ -613,7 +618,7 @@ classdef olMEGA_DataExtraction < handle
             obj.cListQuestionnaire = {''};
             obj.hListBox.Value = obj.cListQuestionnaire;
             
-            % Navigation 
+            % Navigation
             
             nPixSpace = 5;
             nSpaceH = (obj.hTab6.Position(3) - 3 * obj.nButtonViewControl_Width - 2 * nPixSpace) / 2;
@@ -684,7 +689,7 @@ classdef olMEGA_DataExtraction < handle
             obj.hLabel_Calculating.BackgroundColor = [0.9, 0.9, 0.9];
             
         end
-        
+       
         function [] = callbackMax(obj, ~, ~)
             
             if (obj.hAxes.XTick(2) - obj.hAxes.XTick(1)) > 2*60*1000
@@ -771,7 +776,7 @@ classdef olMEGA_DataExtraction < handle
         end
         
         function [] = setAnnotationsPre(obj)
-           
+            
             obj.hLabel_Calculating.Visible = 'On';
             drawnow;
             pause(0.1);
@@ -781,7 +786,7 @@ classdef olMEGA_DataExtraction < handle
         end
         
         function [] = setAnnotations(obj)
-
+            
             vXTicks = linspace(obj.hAxes.XLim(1), obj.hAxes.XLim(2), 5);
             obj.hAxes.XTick = vXTicks;
             obj.hAxes.XTickLabel = formatTime(vXTicks);
@@ -804,6 +809,7 @@ classdef olMEGA_DataExtraction < handle
         function bDeviceFound = checkForDevice(obj)
             % make sure only one device is connected
             sTestDevices = [obj.prefix,'adb devices'];
+            [~, sList] = system(sTestDevices);
             [~, sList] = system(sTestDevices);
             if (length(splitlines(sList)) > 4)
                 errordlg('Too many devices connected. Please try again.', 'Error');
@@ -851,7 +857,7 @@ classdef olMEGA_DataExtraction < handle
             sBaseFolder = uigetdir();
             
             if sBaseFolder == 0
-               return; 
+                return;
             end
             
             sSubjectFolder = [sBaseFolder, filesep, ...
@@ -886,7 +892,7 @@ classdef olMEGA_DataExtraction < handle
                     obj.stSubject.Date, '_', obj.stSubject.Experimenter];
                 system(['mkdir ', '"', obj.stSubject.Folder, '"']);
                 obj.bNewFolder = 1;
-                obj.hButton_Load.Enable = 'On';
+%                 obj.hButton_Load.Enable = 'On';
                 
                 
                 cNewEntry = splitStringForTextBox(...
@@ -903,7 +909,9 @@ classdef olMEGA_DataExtraction < handle
                 obj.hEditExperimenter.Enable = 'Off';
                 
                 obj.hButton_Create.Enable = 'Off';
-                obj.hButton_Load.Enable = 'On';
+                if obj.bIsPhoneConnected
+                    obj.hButton_Load.Enable = 'On';
+                end
                 
             end
             
@@ -1399,7 +1407,7 @@ classdef olMEGA_DataExtraction < handle
         
         function [] = callbackRebootPhone(obj, ~, ~)
             
-            if obj.checkForDevice()
+            if obj.bIsPhoneConnected
                 obj.rebootPhone();
             end
             
@@ -1407,7 +1415,7 @@ classdef olMEGA_DataExtraction < handle
         
         function [] = rebootPhone(obj, ~, ~)
             
-            if obj.checkForDevice()
+            if obj.bIsPhoneConnected
                 [status, cmdout] = system('adb shell "su -c ps"');
                 switch status
                     case 1
@@ -1423,7 +1431,7 @@ classdef olMEGA_DataExtraction < handle
         
         function [] = callbackKillApp(obj, ~, ~)
             
-            if obj.checkForDevice()
+            if obj.bIsPhoneConnected
                 obj.killApp();
             end
             
@@ -1431,7 +1439,7 @@ classdef olMEGA_DataExtraction < handle
         
         function [] = killApp(obj, ~, ~)
             
-            if obj.checkForDevice()
+            if obj.bIsPhoneConnected
                 %                 [status, ~] = system('adb shell "su -c ps"');
                 [status, ~] = system('adb root');
                 switch status
@@ -1448,7 +1456,7 @@ classdef olMEGA_DataExtraction < handle
         end
         
         function [] = callbackEraseData(obj, ~, ~)
-            if obj.checkForDevice()
+            if obj.bIsPhoneConnected
                 status = questdlg('Would you like to erase all data on mobile device?', 'Erase all data?', 'yes', 'no', 'no');
                 if strcmp(status, 'yes')
                     obj.eraseData();
@@ -1458,6 +1466,11 @@ classdef olMEGA_DataExtraction < handle
         
         function [] = eraseData(obj, ~, ~)
             
+            obj.hLabel_Calculating.Text = 'Please do not disconnect the phone.';
+            obj.hLabel_Calculating.Position(1) = obj.nCalculatingWidth - 50;
+            obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth + 100;
+            obj.hLabel_Calculating.Visible = 'On';
+            
             [~, sVersion] = system("adb shell getprop ro.build.version.release");
             obj.nMobileVersion = str2double(sVersion);
             if obj.nMobileVersion <= 10
@@ -1466,30 +1479,113 @@ classdef olMEGA_DataExtraction < handle
                 obj.sMobileDir = 'sdcard/Android/data/com.iha.olmega_mobilesoftware_v2/files';
             end
             
-            
             vStatus = [];
             
             % Erase questionnaire data
-            sCommand_erase_quest = [obj.prefix, 'adb shell rm -r ',obj.sMobileDir, '/data'];
-            [status, ~] = system(sCommand_erase_quest);
-            vStatus = [vStatus, status];
             
-            sCommand_erase_quest = [obj.prefix, 'adb shell mkdir ',obj.sMobileDir, '/data'];
-            [status, ~] = system(sCommand_erase_quest);
-            vStatus = [vStatus, status];
+            sCommand_quest = [obj.prefix, 'adb ls ', obj.sMobileDir, '/data'];
+            [~, cmdout] = system(sCommand_quest);
+            cLines_features = splitlines(cmdout);
+            cLines_features(1:2) = [];
+            nLines_features = length(cLines_features);
+            
+            obj.cListQuestionnaire{end} = 'Erasing questionnaire files: 0%';
+            obj.hListBox.Value = obj.cListQuestionnaire;
+            
+            nApproxTime = 0;
+            tic;
+            iCount = 0;
+            
+            for iFeature = randperm(nLines_features)
+                
+                if obj.bIsPhoneConnected
+                
+                    iCount = iCount + 1;
+
+                    cLine = split(cLines_features{iFeature});
+                    if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
+                        sCommand_features = [obj.prefix, 'adb shell rm ', obj.sMobileDir, '/data/',cLine{4}];
+                        [status, ~] = system(sCommand_features);
+                        vStatus = [vStatus, status];
+
+                        nTimeTaken = toc;
+                        nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
+
+                        obj.cListQuestionnaire{end} = sprintf('Erasing questionnaire files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
+                        obj.hListBox.Value = obj.cListQuestionnaire;
+                        drawnow;
+                    end
+                
+                else
+                    errordlg('Device was disconnected. Process was aborted.');
+                    obj.cListQuestionnaire{end} = 'Erasing process aborted.';
+                    obj.hListBox.Value = obj.cListQuestionnaire;
+                    obj.hLabel_Calculating.Text = 'Calculating';
+                    obj.hLabel_Calculating.Visible = 'Off';
+                    obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
+                    drawnow;
+                    return;
+                end
+                
+            end
+            
+            obj.cListQuestionnaire{end} = sprintf('Erasing questionnaire files: %.0i%%', 100);
+            obj.hListBox.Value = obj.cListQuestionnaire;
             
             sCommand_erase_quest = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///',obj.sMobileDir, '/data'];
             [status, ~] = system(sCommand_erase_quest);
             %             vStatus = [vStatus, status];
             
-            % Erase feature data
-            sCommand_erase_features = [obj.prefix, 'adb shell rm -r ',obj.sMobileDir, '/features'];
-            [status, ~] = system(sCommand_erase_features);
-            vStatus = [vStatus, status];
+            % Erase Feature Data
             
-            sCommand_erase_features = [obj.prefix, 'adb shell mkdir ',obj.sMobileDir, '/features'];
-            [status, ~] = system(sCommand_erase_features);
-            vStatus = [vStatus, status];
+            sCommand_quest_features = [obj.prefix, 'adb ls ', obj.sMobileDir, '/features'];
+            [~, cmdout] = system(sCommand_quest_features);
+            cLines_features = splitlines(cmdout);
+            cLines_features(1:2) = [];
+            nLines_features = length(cLines_features);
+            
+            obj.cListQuestionnaire{end} = 'Erasing feature files: 0%';
+            obj.hListBox.Value = obj.cListQuestionnaire;
+            
+            nApproxTime = 0;
+            tic;
+            iCount = 0;
+            
+            for iFeature = randperm(nLines_features)
+                
+                if obj.bIsPhoneConnected
+                
+                iCount = iCount + 1;
+                
+                cLine = split(cLines_features{iFeature});
+                if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
+                    sCommand_features = [obj.prefix, 'adb shell rm ', obj.sMobileDir, '/features/',cLine{4}];
+                    [status, ~] = system(sCommand_features);
+                    vStatus = [vStatus, status];
+                    
+                    nTimeTaken = toc;
+                    nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
+                    
+                    obj.cListQuestionnaire{end} = sprintf('Erasing feature files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
+                    obj.hListBox.Value = obj.cListQuestionnaire;
+                    drawnow;
+                end
+                
+                else
+                    errordlg('Device was disconnected. Process was aborted.');
+                    obj.cListQuestionnaire{end} = 'Erasing process aborted.';
+                    obj.hListBox.Value = obj.cListQuestionnaire;
+                    obj.hLabel_Calculating.Text = 'Calculating';
+                    obj.hLabel_Calculating.Visible = 'Off';
+                    obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
+                    drawnow;
+                    return;
+                end
+                
+            end
+            
+            obj.cListQuestionnaire{end} = sprintf('Erasing feature files: %.0i%%', 100);
+            obj.hListBox.Value = obj.cListQuestionnaire;
             
             sCommand_erase_features = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///',obj.sMobileDir, '/features'];
             [status, ~] = system(sCommand_erase_features);
@@ -1509,11 +1605,6 @@ classdef olMEGA_DataExtraction < handle
             [status, ~] = system(sCommand_erase_cache);
             vStatus = [vStatus, status];
             
-            % Erase log2 data
-            %             sCommand_erase_cache = [obj.prefix, 'adb shell rm -r /sdcard/olMEGA/log2.txt'];
-            %             [status, ~] = system(sCommand_erase_cache);
-            %             vStatus = [vStatus, status];
-            
             sCommand_erase_cache = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///',obj.sMobileDir, '/', obj.sLogFile];
             [status, ~] = system(sCommand_erase_cache);
             %             vStatus = [vStatus, status];
@@ -1522,14 +1613,18 @@ classdef olMEGA_DataExtraction < handle
             vStatus = [vStatus, (~isempty(find(strfind(cmdout, 'No such file or directory'))) || ~isempty(cmdout))];
             
             if (mean(vStatus) == 0)
-                obj.cListQuestionnaire{end+1} = 'Data was erased from mobile device.';
+                obj.cListQuestionnaire{end} = 'Data was erased from mobile device.';
                 obj.hListBox.Value = obj.cListQuestionnaire;
             end
+            
+            obj.hLabel_Calculating.Text = 'Calculating';
+            obj.hLabel_Calculating.Visible = 'Off';
+            obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
             
         end
         
         function [] = callbackLoadData(obj, ~, ~)
-            if obj.bNewFolder && obj.checkForDevice()
+            if obj.bNewFolder && obj.bIsPhoneConnected
                 obj.loadData();
             end
         end
@@ -1543,6 +1638,11 @@ classdef olMEGA_DataExtraction < handle
             obj.hButton_Reboot.Enable = 'Off';
             obj.hButton_Erase.Enable = 'Off';
             
+            obj.hLabel_Calculating.Text = 'Please do not disconnect the phone.';
+            obj.hLabel_Calculating.Position(1) = obj.nCalculatingWidth - 50;
+            obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth + 100;
+            obj.hLabel_Calculating.Visible = 'On';
+            
             
             [~, sVersion] = system("adb shell getprop ro.build.version.release");
             obj.nMobileVersion = str2double(sVersion);
@@ -1553,23 +1653,21 @@ classdef olMEGA_DataExtraction < handle
             end
             
             sFolder_log = obj.stSubject.Folder;
-            sFolder_quest = ['"', obj.stSubject.Folder, filesep, obj.stSubject.Name, '_Quest', '"'];
-            sFolder_features = ['"', obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', '"'];
+            sFolder_quest = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_Quest'];
+            sFolder_features = [ obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData'];
             
-            system(['mkdir ', sFolder_quest]);
+%             if (~exist(sFolder_quest(2:end-1), 'dir') == 7)
+                system(['mkdir ', sFolder_quest]);
+%             end
+%             if (~exist(sFolder_features(2:end-1), 'dir') == 7)
             system(['mkdir ', sFolder_features]);
+%             end
             
             % Copy Log data
-            
-            
-            %             sCommand_quest = [obj.prefix, 'adb ls ', sMobileDir, '/data/',cLine{4},' ', sFolder_quest];
             
             sCommand_log = [obj.prefix, 'adb pull ', obj.sMobileDir, '/', obj.sLogFile, ' ', sFolder_log];
             
             [status, ~] = system(sCommand_log);
-            
-            %             sCommand_log = [obj.prefix, 'adb pull sdcard/olMEGA/log2.txt ', sFolder_log];
-            %             [status, ~] = system(sCommand_log);
             
             if (status == 0)
                 obj.cListQuestionnaire{end+1} = '[x] Log data copied.';
@@ -1598,20 +1696,35 @@ classdef olMEGA_DataExtraction < handle
             vStatus = [];
             for iLine = 1:nLines_quest
                 
-                cLine = split(cLines_quest{iLine});
-                if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
+                if obj.bIsPhoneConnected
+
+                    cLine = split(cLines_quest{iLine});
+                    if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
+
+                        sCommand_quest = [obj.prefix, 'adb pull ', obj.sMobileDir, '/data/',cLine{4},' ', sFolder_quest];
+
+                        [status, ~] = system(sCommand_quest);
+                        vStatus = [vStatus, status];
+
+                        nTimeTaken = toc;
+                        nApproxTime = nTimeTaken/iLine*(nLines_quest - iLine);
+
+                        obj.cListQuestionnaire{end} = sprintf('Copying questionnaire files: %.0i%%, estimated time: %s', round(iLine/nLines_quest*100), secondsToTime(nApproxTime));
+                        obj.hListBox.Value = obj.cListQuestionnaire;
+                        pause(0.01);
+                    end
                     
-                    sCommand_quest = [obj.prefix, 'adb pull ', obj.sMobileDir, '/data/',cLine{4},' ', sFolder_quest];
-                    
-                    [status, ~] = system(sCommand_quest);
-                    vStatus = [vStatus, status];
-                    
-                    nTimeTaken = toc;
-                    nApproxTime = nTimeTaken/iLine*(nLines_quest - iLine);
-                    
-                    obj.cListQuestionnaire{end} = sprintf('Copying questionnaire files: %.0i%%, estimated time: %s', round(iLine/nLines_quest*100), secondsToTime(nApproxTime));
+                else
+                    errordlg('Device was disconnected. Process was aborted.');
+                    obj.cListQuestionnaire{end} = 'Copying process aborted.';
                     obj.hListBox.Value = obj.cListQuestionnaire;
-                    pause(0.01);
+                    obj.hLabel_Calculating.Text = 'Calculating';
+                    obj.hLabel_Calculating.Visible = 'Off';
+                    obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
+                    obj.hButton_Open.Enable = 'On';
+                    obj.hButton_Clear.Enable = 'On';
+                    drawnow;
+                    return;
                 end
                 
             end
@@ -1650,20 +1763,34 @@ classdef olMEGA_DataExtraction < handle
             vStatus = [];
             for iFeature = randperm(nLines_features)
                 
-                iCount = iCount + 1;
+                if obj.bIsPhoneConnected
                 
-                cLine = split(cLines_features{iFeature});
-                if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
-                    sCommand_features = [obj.prefix, 'adb pull ', obj.sMobileDir, '/features/',cLine{4},' ', sFolder_features];
-                    [status, ~] = system(sCommand_features);
-                    vStatus = [vStatus, status];
-                    
-                    nTimeTaken = toc;
-                    nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
-                    
-                    obj.cListQuestionnaire{end} = sprintf('Copying feature files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
+                    iCount = iCount + 1;
+
+                    cLine = split(cLines_features{iFeature});
+                    if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
+                        sCommand_features = [obj.prefix, 'adb pull ', obj.sMobileDir, '/features/',cLine{4},' ', sFolder_features];
+                        [status, ~] = system(sCommand_features);
+                        vStatus = [vStatus, status];
+
+                        nTimeTaken = toc;
+                        nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
+
+                        obj.cListQuestionnaire{end} = sprintf('Copying feature files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
+                        obj.hListBox.Value = obj.cListQuestionnaire;
+                        drawnow;
+                    end
+                else
+                    errordlg('Device was disconnected. Process was aborted.');
+                    obj.cListQuestionnaire{end} = 'Copying process aborted.';
                     obj.hListBox.Value = obj.cListQuestionnaire;
+                    obj.hLabel_Calculating.Text = 'Calculating';
+                    obj.hLabel_Calculating.Visible = 'Off';
+                    obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
+                    obj.hButton_Open.Enable = 'On';
+                    obj.hButton_Clear.Enable = 'On';
                     drawnow;
+                    return;
                 end
                 
             end
@@ -1684,7 +1811,8 @@ classdef olMEGA_DataExtraction < handle
             obj.hListBox.Value = obj.cListQuestionnaire;
             
             
-            %             obj.hButton_Analyse.Enable = 'On';
+            obj.hLabel_Calculating.Text = 'Calculating';
+            obj.hLabel_Calculating.Visible = 'Off';
             
             if obj.bLog
                 obj.extractConnection();
@@ -2029,7 +2157,7 @@ classdef olMEGA_DataExtraction < handle
                 end
             end
             
-            % Print Questionnaires 
+            % Print Questionnaires
             sh = stairs(obj.hAxes, vQuestTimes, 0.4 + vQuestEvents/10, 'Color', obj.mColors(4,:));
             bottom = 0.4;
             x_tmp = [sh.XData(1),repelem(sh.XData(2:end),2)];
@@ -2044,7 +2172,7 @@ classdef olMEGA_DataExtraction < handle
             y_tmp = [repelem(sh.YData(1:end-1),2),sh.YData(end)];
             p = fill(obj.hAxes, [x_tmp,fliplr(x_tmp)],[y_tmp,bottom*ones(size(y_tmp))], obj.mColors(3,:));
             p.LineStyle = 'none';
-           
+            
             % Print Battery status
             if ~isempty(find(vLevelBattery > 1))
                 vLevelBattery = vLevelBattery / 100;
@@ -2124,9 +2252,16 @@ classdef olMEGA_DataExtraction < handle
             
             obj.hButton_Open.Enable = 'On';
             obj.hButton_Clear.Enable = 'On';
-            obj.hButton_KillApp.Enable = 'On';
-            obj.hButton_Reboot.Enable = 'On';
-            obj.hButton_Erase.Enable = 'On';
+            
+            if obj.bIsPhoneConnected
+                obj.hButton_KillApp.Enable = 'On';
+                obj.hButton_Reboot.Enable = 'On';
+                obj.hButton_Erase.Enable = 'On';
+            else
+                obj.hButton_KillApp.Enable = 'Off';
+                obj.hButton_Reboot.Enable = 'Off';
+                obj.hButton_Erase.Enable = 'Off';
+            end
             
         end
         

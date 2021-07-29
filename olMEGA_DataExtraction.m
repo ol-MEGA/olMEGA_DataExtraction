@@ -1313,7 +1313,7 @@ classdef olMEGA_DataExtraction < handle
                 end
                 
                 obj.bClear = 1;
-                delete(timerfindall);
+%                 delete(timerfindall);
                 
                 obj.nMagnification = 1;
                 obj.vXLim_orig = [];
@@ -2158,20 +2158,24 @@ classdef olMEGA_DataExtraction < handle
             end
             
             % Print Questionnaires
-            sh = stairs(obj.hAxes, vQuestTimes, 0.4 + vQuestEvents/10, 'Color', obj.mColors(4,:));
-            bottom = 0.4;
-            x_tmp = [sh.XData(1),repelem(sh.XData(2:end),2)];
-            y_tmp = [repelem(sh.YData(1:end-1),2),sh.YData(end)];
-            p = fill(obj.hAxes, [x_tmp,fliplr(x_tmp)],[y_tmp,bottom*ones(size(y_tmp))], obj.mColors(4,:));
-            p.LineStyle = 'none';
+            if ~isempty(vQuestTimes)
+                sh = stairs(obj.hAxes, vQuestTimes, 0.4 + vQuestEvents/10, 'Color', obj.mColors(4,:));
+                bottom = 0.4;
+                x_tmp = [sh.XData(1),repelem(sh.XData(2:end),2)];
+                y_tmp = [repelem(sh.YData(1:end-1),2),sh.YData(end)];
+                p = fill(obj.hAxes, [x_tmp,fliplr(x_tmp)],[y_tmp,bottom*ones(size(y_tmp))], obj.mColors(4,:));
+                p.LineStyle = 'none';
+            end
             
             % Print Display Uptime
-            sh = stairs(obj.hAxes, vTimeDisplay, 0.3 + vDisplay/10, 'Color', obj.mColors(3,:));
-            bottom = 0.3;
-            x_tmp = [sh.XData(1),repelem(sh.XData(2:end),2)];
-            y_tmp = [repelem(sh.YData(1:end-1),2),sh.YData(end)];
-            p = fill(obj.hAxes, [x_tmp,fliplr(x_tmp)],[y_tmp,bottom*ones(size(y_tmp))], obj.mColors(3,:));
-            p.LineStyle = 'none';
+            if ~isempty(vTimeDisplay)
+                sh = stairs(obj.hAxes, vTimeDisplay, 0.3 + vDisplay/10, 'Color', obj.mColors(3,:));
+                bottom = 0.3;
+                x_tmp = [sh.XData(1),repelem(sh.XData(2:end),2)];
+                y_tmp = [repelem(sh.YData(1:end-1),2),sh.YData(end)];
+                p = fill(obj.hAxes, [x_tmp,fliplr(x_tmp)],[y_tmp,bottom*ones(size(y_tmp))], obj.mColors(3,:));
+                p.LineStyle = 'none';
+            end
             
             % Print Battery status
             if ~isempty(find(vLevelBattery > 1))

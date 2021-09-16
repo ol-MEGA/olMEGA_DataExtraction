@@ -1839,6 +1839,7 @@ classdef olMEGA_DataExtraction < handle
             sFileName = obj.sLogFile;
             
             cLog = fileread(fullfile(obj.stSubject.Folder,sFileName));
+            cLog = replaceBetween(cLog, "<begin stacktrace>", "<end stacktrace>", "Error");
             cLog = splitlines(cLog);
             
             obj.vProportions = zeros(obj.nStates, 1);
@@ -1881,6 +1882,7 @@ classdef olMEGA_DataExtraction < handle
             vTimeAppRunning = [];
             
             for iLog = 1:length(cLog)-1
+
                 sLogTime = cLog{iLog}(1:23);
                 sLog = cLog{iLog}(25:end);
                 if contains(sLog, sOccBTOn)

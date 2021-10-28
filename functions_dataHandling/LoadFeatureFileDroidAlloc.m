@@ -107,9 +107,11 @@ if (fid)
         tempData = fread(fid, [stInfo.nDimensions, stInfo.vFrames(iBlock)], 'float', cMachineFormat{:});
         
         if iBlock == idxStart
-            idx = 1:stInfo.vFrames(iBlock);
+            % idx = 1:stInfo.vFrames(iBlock);
+            idx = 1:size(tempData, 2);
         else
-            idx = idx(end) + (1:stInfo.vFrames(iBlock));
+            %             idx = idx(end) + (1:stInfo.vFrames(iBlock));
+            idx = idx(end) + (1:size(tempData, 2));
         end
         
         mFeatureData(idx,:) = tempData(3:end,:).';

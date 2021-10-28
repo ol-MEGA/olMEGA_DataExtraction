@@ -36,6 +36,8 @@ function [ mFeatureData, mFrameTime, stInfo ] = LoadFeatureFileDroidAlloc( szFil
 
 cMachineFormat = {0, 'b'};
 
+
+
 % Get information about feature file for preallocation
 stInfo = GetFeatureFileInfo(szFilename, 0);
 

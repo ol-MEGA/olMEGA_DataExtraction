@@ -2039,7 +2039,7 @@ classdef olMEGA_DataExtraction < handle
             
             configStruct.lowerBinCohe = 1100;
             configStruct.upperBinCohe = 3000;
-            configStruct.upperThresholdCohe = 0.9;
+            configStruct.upperThresholdCohe = 0.99;
             configStruct.upperThresholdRMS = 90; % -6 dB
             configStruct.lowerThresholdRMS = 2; % -70 dB
             configStruct.errorTolerance = 0.05; % 5 percent
@@ -2050,60 +2050,257 @@ classdef olMEGA_DataExtraction < handle
             % Print Objective Feature Existence and Error Percentage per Feature File
             mFeatureTime = zeros(ceil(length(stSubject.chunkID.FileName) / 3), 2);
             
-            for iFile = 1 : 3 : length(stSubject.chunkID.FileName)
+            
+            
+            
+            
+            
+            
+            
+            nPSD = 0;
+            nRMS = 0;
+            nZCR = 0;
+            
+            
+            % SOMETIMES ALL PSD FILES ARE MISSING FROM THE LSIT?!?!
+            
+            
+            for iFile = 1 : 1 : length(stSubject.chunkID.FileName)
                 
                 % Extract datetime from feature file names
-                sDate = stSubject.chunkID.FileName(iFile);
+%                 sDate = stSubject.chunkID.FileName(iFile);
                 
-                if strcmp(sDate{:}(4), '_') && strcmp(sDate{:}(11), '_')
-                    bIsOldFormat = true;
-                else
-                    bIsOldFormat = false;
+%                 if strcmp(sDate{:}(4), '_') && strcmp(sDate{:}(11), '_')
+%                     bIsOldFormat = true;
+%                 else
+%                     bIsOldFormat = false;
+%                 end
+%                 
+%                 if bIsOldFormat
+%                     sDate = sDate{:}(12 : end - 5);
+%                 else
+%                     sDate = sDate{:}(5 : end - 5);
+%                 end
+                
+%                 sDate = [sDate(1:4), '-', sDate(5 : 6), '-', sDate(7 : 8), ' ', sDate(10 : 11), ':', sDate(12 : 13), ':', sDate(14 : 15), '.', sDate(16 : end)];
+                
+%                 mFeatureTime((iFile - 1) / 3 + 1, 1) = stringToTimeMs(sDate) - nMinTime;
+%                 mFeatureTime((iFile - 1) / 3 + 1, 2) = mFeatureTime((iFile - 1) / 3 + 1, 1) + 60*1000;
+%                 
+%                 vX = [mFeatureTime((iFile - 1) / 3 + 1, 1), mFeatureTime((iFile - 1) / 3 + 1, 1), ...
+%                     mFeatureTime((iFile - 1) / 3 + 1, 2), mFeatureTime((iFile - 1) / 3 + 1, 2)];
+                
+                sFeatureFile = stSubject.chunkID.FileName(iFile);
+                sFeatureFile = sFeatureFile{1};
+                
+                if contains(sFeatureFile, 'PSD')
+                    nPSD = nPSD + 1;
+                    
+                    cError = stSubject.chunkID.PercentageError(iFile);
+                    if isnan(sum(cError{:}))
+                        cError = {1};
+                    elseif isempty(cError{:})
+                        cError = {0};
+                    end
+                    
+                    sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
+                    sInfo = GetFeatureFileInfo(sFullFile);
+                    vStartTime =  sInfo.StartTime;
+                    
+                    if (vStartTime(6) < 10)
+                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
+                    else
+                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
+                    end
+                    
+                    nTimeIn = stringToTimeMs(sDate) - nMinTime;
+                    nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                    vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+                    
+                    p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
+                    p.LineStyle = 'none';
+                    
+                elseif contains(sFeatureFile, 'RMS')
+                    nRMS = nRMS + 1;
+                    
+                    cError = stSubject.chunkID.PercentageError(iFile);
+                    if isnan(sum(cError{:}))
+                        cError = {1};
+                    elseif isempty(cError{:})
+                        cError = {0};
+                    end
+                    
+                    sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
+                    sInfo = GetFeatureFileInfo(sFullFile);
+                    vStartTime =  sInfo.StartTime;
+                    
+                    if (vStartTime(6) < 10)
+                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
+                    else
+                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
+                    end
+                    
+                    nTimeIn = stringToTimeMs(sDate) - nMinTime;
+                    nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                    vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+                    
+                    p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
+                    p.LineStyle = 'none';
+
+                elseif contains(sFeatureFile, 'ZCR')
+                    nZCR = nZCR + 1;
+                    
+                    cError = stSubject.chunkID.PercentageError(iFile);
+                    if isnan(sum(cError{:}))
+                        cError = {1};
+                    elseif isempty(cError{:})
+                        cError = {0};
+                    end
+                    
+                    sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
+                    sInfo = GetFeatureFileInfo(sFullFile);
+                    vStartTime =  sInfo.StartTime;
+                    
+                    if (vStartTime(6) < 10)
+                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
+                    else
+                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
+                    end
+                    
+                    nTimeIn = stringToTimeMs(sDate) - nMinTime;
+                    nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                    vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+                    
+                    p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
+                    p.LineStyle = 'none';
+
                 end
                 
-                if bIsOldFormat
-                    sDate = sDate{:}(12 : end - 5);
-                else
-                    sDate = sDate{:}(5 : end - 5);
-                end
-                
-                sDate = [sDate(1:4), '-', sDate(5 : 6), '-', sDate(7 : 8), ' ', sDate(10 : 11), ':', sDate(12 : 13), ':', sDate(14 : 15), '.', sDate(16 : end)];
-                
-                mFeatureTime((iFile - 1) / 3 + 1, 1) = stringToTimeMs(sDate) - nMinTime;
-                mFeatureTime((iFile - 1) / 3 + 1, 2) = mFeatureTime((iFile - 1) / 3 + 1, 1) + 60*1000;
-                
-                vX = [mFeatureTime((iFile - 1) / 3 + 1, 1), mFeatureTime((iFile - 1) / 3 + 1, 1), ...
-                    mFeatureTime((iFile - 1) / 3 + 1, 2), mFeatureTime((iFile - 1) / 3 + 1, 2)];
-                
-                % PSD
-                cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1);
-                if isnan(sum(cError{:}))
-                    cError = {1};
-                elseif isempty(cError{:})
-                    cError = {0};
-                end
-                p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
-                p.LineStyle = 'none';
-                % RMS
-                cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+2
-                if isnan(sum(cError{:}))
-                    cError = {1};
-                elseif isempty(cError{:})
-                    cError = {0};
-                end
-                p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
-                p.LineStyle = 'none';
-                % ZCR
-                cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+3
-                if isnan(sum(cError{:}))
-                    cError = {1};
-                elseif isempty(cError{:})
-                    cError = {0};
-                end
-                p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
-                p.LineStyle = 'none';
+%                 % PSD
+%                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1);
+%                 if isnan(sum(cError{:}))
+%                     cError = {1};
+%                 elseif isempty(cError{:})
+%                     cError = {0};
+%                 end
+%                 p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
+%                 p.LineStyle = 'none';
+%                 % RMS
+%                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+2
+%                 if isnan(sum(cError{:}))
+%                     cError = {1};
+%                 elseif isempty(cError{:})
+%                     cError = {0};
+%                 end
+%                 p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
+%                 p.LineStyle = 'none';
+%                 % ZCR
+%                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+3
+%                 if isnan(sum(cError{:}))
+%                     cError = {1};
+%                 elseif isempty(cError{:})
+%                     cError = {0};
+%                 end
+%                 p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
+%                 p.LineStyle = 'none';
                 
             end
+            
+            
+            
+            
+            
+            1;
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+%             for iFile = 1 : 3 : length(stSubject.chunkID.FileName)
+%                 
+%                 % Extract datetime from feature file names
+%                 sDate = stSubject.chunkID.FileName(iFile);
+%                 
+%                 if strcmp(sDate{:}(4), '_') && strcmp(sDate{:}(11), '_')
+%                     bIsOldFormat = true;
+%                 else
+%                     bIsOldFormat = false;
+%                 end
+%                 
+%                 if bIsOldFormat
+%                     sDate = sDate{:}(12 : end - 5);
+%                 else
+%                     sDate = sDate{:}(5 : end - 5);
+%                 end
+%                 
+%                 sDate = [sDate(1:4), '-', sDate(5 : 6), '-', sDate(7 : 8), ' ', sDate(10 : 11), ':', sDate(12 : 13), ':', sDate(14 : 15), '.', sDate(16 : end)];
+%                 
+%                 mFeatureTime((iFile - 1) / 3 + 1, 1) = stringToTimeMs(sDate) - nMinTime;
+%                 mFeatureTime((iFile - 1) / 3 + 1, 2) = mFeatureTime((iFile - 1) / 3 + 1, 1) + 60*1000;
+%                 
+%                 vX = [mFeatureTime((iFile - 1) / 3 + 1, 1), mFeatureTime((iFile - 1) / 3 + 1, 1), ...
+%                     mFeatureTime((iFile - 1) / 3 + 1, 2), mFeatureTime((iFile - 1) / 3 + 1, 2)];
+%                 
+%                 % PSD
+%                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1);
+%                 if isnan(sum(cError{:}))
+%                     cError = {1};
+%                 elseif isempty(cError{:})
+%                     cError = {0};
+%                 end
+%                 p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
+%                 p.LineStyle = 'none';
+%                 % RMS
+%                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+2
+%                 if isnan(sum(cError{:}))
+%                     cError = {1};
+%                 elseif isempty(cError{:})
+%                     cError = {0};
+%                 end
+%                 p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
+%                 p.LineStyle = 'none';
+%                 % ZCR
+%                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+3
+%                 if isnan(sum(cError{:}))
+%                     cError = {1};
+%                 elseif isempty(cError{:})
+%                     cError = {0};
+%                 end
+%                 p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
+%                 p.LineStyle = 'none';
+%                 
+%             end
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             
             % Obtain questionnaire data
             if obj.isHallo

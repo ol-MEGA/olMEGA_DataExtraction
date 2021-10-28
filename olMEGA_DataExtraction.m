@@ -2044,51 +2044,17 @@ classdef olMEGA_DataExtraction < handle
             configStruct.lowerThresholdRMS = 2; % -70 dB
             configStruct.errorTolerance = 0.05; % 5 percent
             
-            validatesubject(obj, configStruct);
+            stValidation = validatesubject(obj, configStruct);
             load([obj.stSubject.Folder, filesep, obj.stSubject.Name]);
             
             % Print Objective Feature Existence and Error Percentage per Feature File
             mFeatureTime = zeros(ceil(length(stSubject.chunkID.FileName) / 3), 2);
             
-            
-            
-            
-            
-            
-            
-            
             nPSD = 0;
             nRMS = 0;
             nZCR = 0;
-            
-            
-            % SOMETIMES ALL PSD FILES ARE MISSING FROM THE LSIT?!?!
-            
-            
+           
             for iFile = 1 : 1 : length(stSubject.chunkID.FileName)
-                
-                % Extract datetime from feature file names
-%                 sDate = stSubject.chunkID.FileName(iFile);
-                
-%                 if strcmp(sDate{:}(4), '_') && strcmp(sDate{:}(11), '_')
-%                     bIsOldFormat = true;
-%                 else
-%                     bIsOldFormat = false;
-%                 end
-%                 
-%                 if bIsOldFormat
-%                     sDate = sDate{:}(12 : end - 5);
-%                 else
-%                     sDate = sDate{:}(5 : end - 5);
-%                 end
-                
-%                 sDate = [sDate(1:4), '-', sDate(5 : 6), '-', sDate(7 : 8), ' ', sDate(10 : 11), ':', sDate(12 : 13), ':', sDate(14 : 15), '.', sDate(16 : end)];
-                
-%                 mFeatureTime((iFile - 1) / 3 + 1, 1) = stringToTimeMs(sDate) - nMinTime;
-%                 mFeatureTime((iFile - 1) / 3 + 1, 2) = mFeatureTime((iFile - 1) / 3 + 1, 1) + 60*1000;
-%                 
-%                 vX = [mFeatureTime((iFile - 1) / 3 + 1, 1), mFeatureTime((iFile - 1) / 3 + 1, 1), ...
-%                     mFeatureTime((iFile - 1) / 3 + 1, 2), mFeatureTime((iFile - 1) / 3 + 1, 2)];
                 
                 sFeatureFile = stSubject.chunkID.FileName(iFile);
                 sFeatureFile = sFeatureFile{1};

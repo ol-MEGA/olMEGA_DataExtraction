@@ -10,6 +10,10 @@ szCurrentDir = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData' ];
 
 AllDataEntries = listFiles(szCurrentDir,'*.feat');
 isInValidFile = arrayfun(@(x)(contains(x.name, '._')), AllDataEntries);
+isVALIDBLOCKS = arrayfun(@(x)(contains(x.name, 'VALIDBLOCKS')), AllDataEntries);
+
+isInValidFile = logical(sign(isInValidFile + isVALIDBLOCKS));
+
 AllDataEntries(isInValidFile) = [];
 SizeOfData = cell2mat({AllDataEntries.bytes});
 [NrOfOccurances,Values] = hist(SizeOfData,unique(SizeOfData));

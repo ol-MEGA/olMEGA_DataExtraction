@@ -1,14 +1,15 @@
-function [vPredictedVS,vTime]=detectOwnVoiceRandomForest(obj,stDate)
-% function to predict voice sequences with a trained random forest
-% Usage [vPredictedVS,vTime]=detectOwnVoiceRandomForest(obj,stDate)
+function [vPredictedOVS,vTime]=detectOwnVoiceRandomForest(obj,stDate)
+% function to predict own voice sequences with a trained random forest
+% processes intervalls of 1 hour duration
+% Usage [vPredictedOVS,vTime]=detectOwnVoiceRandomForest(obj,stDate)
 %
 % Parameters
 % ----------
 % obj - class olMEGA_DataExtraction, contains all informations
 %
 % stDate - struct which contains valid date informations about the time
-%          informations: start and end day and time; this struct results
-%          from calling checkInputFormat.m
+%          informations: start and end day and time; this struct could
+%          result from calling checkInputFormat.m
 %
 % Returns
 % -------
@@ -24,23 +25,60 @@ function [vPredictedVS,vTime]=detectOwnVoiceRandomForest(obj,stDate)
 szTreeDir = [obj.sFolderMain filesep 'functions_helper'];
 szName = 'RandomForest_100Trees_OVD.mat';
 load([szTreeDir filesep szName], 'szVarNames'); % first only names
-szVarNames(end) = [];
+szVarNames(end) = []; % exclude ground truth
 
-% extract features needed for VD
-[mDataSet, vTime] = FeatureExtraction(obj, stDate, szVarNames);
+% check number of 1h intervalls
+nHours = hours(stDate.EndTime - stDate.StartTime);
 
-% if for the given time interval no data is available, return empty vector
-if size(mDataSet, 1) == 1 || isempty(mDataSet)
-    vPredictedVS = [];
-    return;
+if nHours > 1
+    % adjust to 1h
+    stDate.EndTime = stDate.StartTime + duration(1, 0, 0);
+
+    % do calculation for 1h intervalls
+    vPredictedOVS = [];
+    vTime = [];
+    for ii = 1:ceil(nHours)    
+        % extract features needed for VD
+        [mDataSet, vTimeTemp] = FeatureExtraction(obj, stDate, szVarNames);
+        
+        % check if for the given time interval data is available
+        if size(mDataSet, 1) > 1
+
+            % load random forest only once
+            if ~exist('MRandomForest', 'var')
+                load([szTreeDir filesep szName], 'MRandomForest');
+            end
+            
+            % start prediction with trained ensemble of bagged classification trees
+            vOVS = predict(MRandomForest, mDataSet);
+            vOVS = str2num(cell2mat(vOVS));
+
+            vPredictedOVS = [vPredictedOVS; vOVS];
+            vTime = [vTime; vTimeTemp];
+        end
+
+        % adjust time frame
+        stDate.StartTime = stDate.StartTime + duration(1, 0, 0.1);
+        stDate.EndTime = stDate.EndTime + duration(1, 0, 0);
+    end
+else
+    % extract features needed for VD
+    [mDataSet, vTime] = FeatureExtraction(obj, stDate, szVarNames);
+    
+    % if for the given time interval no data is available, return empty vector
+    if size(mDataSet, 1) == 1 || isempty(mDataSet)
+        vPredictedOVS = [];
+        return;
+    end
+
+    % if data found, load random forest
+    load([szTreeDir filesep szName], 'MRandomForest');
+
+    % start prediction with trained ensemble of bagged classification trees
+    vPredictedOVS = predict(MRandomForest, mDataSet);
+    vPredictedOVS = str2num(cell2mat(vPredictedOVS));
 end
 
-% if data found, load random forest
-load([szTreeDir filesep szName], 'MRandomForest');
-
-% start prediction with trained ensemble of bagged classification trees
-vPredictedVS = predict(MRandomForest, mDataSet);
-vPredictedVS = str2num(cell2mat(vPredictedVS));
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2021> J. Pohlhausen

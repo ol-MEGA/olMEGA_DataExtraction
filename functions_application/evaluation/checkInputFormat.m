@@ -1,11 +1,11 @@
 function stInfo = checkInputFormat(obj, StartTime, EndTime, StartDay, EndDay)
-% function to check the input format of a given input param
+% function to logically check the input format of a given input param
 % Usage stInfo = checkInputFormat(obj, StartTime, EndTime, StartDay, EndDay)
 %
 % Parameters
 % ----------
 % inParam : 
-%   obj : class IHABdata, contains all informations
+%   obj : class olMEGA_DataExtraction, contains all informations
 %
 %   StartTime : duration to specify the start time of desired data
 %               syntax duration(H,MI,S);

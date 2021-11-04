@@ -1,6 +1,6 @@
 function [vPredictedOVS,vTime]=detectOwnVoiceRandomForest(obj,stDate)
 % function to predict own voice sequences with a trained random forest
-% processes intervalls of 1 hour duration
+% processes intervals of 1 hour duration
 % Usage [vPredictedOVS,vTime]=detectOwnVoiceRandomForest(obj,stDate)
 %
 % Parameters
@@ -27,14 +27,14 @@ szName = 'RandomForest_100Trees_OVD.mat';
 load([szTreeDir filesep szName], 'szVarNames'); % first only names
 szVarNames(end) = []; % exclude ground truth
 
-% check number of 1h intervalls
+% check number of 1h intervals
 nHours = hours(stDate.EndTime - stDate.StartTime);
 
 if nHours > 1
     % adjust to 1h
     stDate.EndTime = stDate.StartTime + duration(1, 0, 0);
 
-    % do calculation for 1h intervalls
+    % do calculation for 1h intervals
     vPredictedOVS = [];
     vTime = [];
     for ii = 1:ceil(nHours)    
@@ -78,7 +78,6 @@ else
     vPredictedOVS = predict(MRandomForest, mDataSet);
     vPredictedOVS = str2num(cell2mat(vPredictedOVS));
 end
-
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2021> J. Pohlhausen

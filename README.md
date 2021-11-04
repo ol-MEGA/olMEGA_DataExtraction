@@ -50,24 +50,22 @@ ICA_DataAnalysis
 * Command Line:
 
 ```matlab
-[obj] = olMEGA_DataExtraction([Path to data folder]);
 [vPredictedOVS, vTime] = detectOwnVoiceRandomForest(obj, [struct with time info]);
 ```
+The folder `olMEGA_DataExtraction` contains the subfolders `functions_application > evaluation`.
+The folder `evaluation` contains the function `detectOwnVoiceRandomForest` and its test-script `detectOwnVoiceRandomForestTest`.
+For a simple test adjust `detectOwnVoiceRandomForestTest`:
 
-The folder <span style="font-family:Menlo;">olMEGA_DataExtraction</span> contains the subfolders <span style="font-family:Menlo;">functions_application > evaluation</span>.
-The folder <span style="font-family:Menlo;">evaluation</span> contains the function <span style="font-family:Menlo;">detectOwnVoiceRandomForest</span> and its test-script <span style="font-family:Menlo;">detectOwnVoiceRandomForestTest</span>.
-For a simple test adjust <span style="font-family:Menlo;">detectOwnVoiceRandomForestTest</span>:
+1. `szBaseDir`: customize the path to your main data folder
 
-1. <span style="font-family:Menlo;">szBaseDir</span>: customize the path to your main data folder
+2. `szCurrentFolder`: choose the name of one subject folder (e.g. SF170777_210720_SF)
 
-2. <span style="font-family:Menlo;">szCurrentFolder</span>: choose the name of one subject folder (e.g. SF170777_210720_SF)
+3. `stDate`: adjust time informations for prediction: start and end day as datetime and start and end time as duration
 
-3. <span style="font-family:Menlo;">stDate</span>: adjust time informations for prediction: start and end day as datetime and start and end time as duration
+ … and run. The function `detectOwnVoiceRandomForest` returns the vector `vPredictedOVS` containing the predicted OVS (1 = OVS, 0 = no OVS) and the corresponding time vector `vTime`.
 
- … and run. The function <span style="font-family:Menlo;">detectOwnVoiceRandomForest</span> returns the vector <span style="font-family:Menlo;">vPredictedOVS</span> containing the predicted OVS (1 = OVS, 0 = no OVS) and the corresponding time vector <span style="font-family:Menlo;">vTime</span>.
-
-The OVD calls a feature extraction, which processes data in 1 hour intervals and can take a while, if a longer time period is chosen. We recommend to call <span style="font-family:Menlo;">detectOwnVoiceRandomForest</span> per day.
-If for the given input day and time no feature files exist, a short warning occurs and <span style="font-family:Menlo;">vPredictedOVS</span> and <span style="font-family:Menlo;">vTime</span> are empty.
+The OVD calls a feature extraction, which processes data in 1 hour intervals and can take a while, if a longer time period is chosen. We recommend to call `detectOwnVoiceRandomForest` per day.
+If for the given input day and time no feature files exist, a short warning occurs and `vPredictedOVS` and `vTime` are empty.
 
 
 ## License:

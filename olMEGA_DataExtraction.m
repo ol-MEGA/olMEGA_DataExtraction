@@ -342,17 +342,29 @@ classdef olMEGA_DataExtraction < handle
             
         end
         
+        function myCloseReq(obj, ~, ~)
+            
+            delete(obj.hFig1);
+            delete(obj.hLegend);
+            fclose all;
+            stop(timerfindall);
+            delete(timerfindall);
+           
+        end
+        
         function [] = gui(obj)
             
             obj.hTimer = MobileTimer(obj);
             
             % Main Window
             
-            obj.hFig1 = uifigure();
+            obj.hFig1 = uifigure('CloseRequestFcn',@obj.myCloseReq);
             obj.hFig1.Position = [(obj.vScreenSize(3)-obj.nWidthFig1)/2,...
                 (obj.vScreenSize(4)-obj.nHeightFig1)/2, obj.nWidthFig1, obj.nHeightFig1];
             obj.hFig1.Name = obj.sTitleFig1;
             obj.hFig1.Resize = 'Off';
+            
+%             obj.hFig1.DeleteFcn = @myCloseReq;
             
             % Tabs
             
@@ -1653,19 +1665,15 @@ classdef olMEGA_DataExtraction < handle
             end
             
             sFolder_log = obj.stSubject.Folder;
-            sFolder_quest = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_Quest'];
-            sFolder_features = [ obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData'];
-            
-%             if (~exist(sFolder_quest(2:end-1), 'dir') == 7)
-                system(['mkdir ', sFolder_quest]);
-%             end
-%             if (~exist(sFolder_features(2:end-1), 'dir') == 7)
-            system(['mkdir ', sFolder_features]);
-%             end
-            
+            sFolder_quest = strcat("""",obj.stSubject.Folder, filesep, obj.stSubject.Name, '_Quest',"""");
+            sFolder_features = strcat("""",obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData',"""");
+
+            system(strcat("mkdir ", sFolder_quest));
+            system(strcat("mkdir ", sFolder_features));
+    
             % Copy Log data
             
-            sCommand_log = [obj.prefix, 'adb pull ', obj.sMobileDir, '/', obj.sLogFile, ' ', sFolder_log];
+            sCommand_log = [obj.prefix, 'adb pull ', obj.sMobileDir, '/', obj.sLogFile, ' "', sFolder_log,'" '];
             
             [status, ~] = system(sCommand_log);
             
@@ -1701,7 +1709,7 @@ classdef olMEGA_DataExtraction < handle
                     cLine = split(cLines_quest{iLine});
                     if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
 
-                        sCommand_quest = [obj.prefix, 'adb pull ', obj.sMobileDir, '/data/',cLine{4},' ', sFolder_quest];
+                        sCommand_quest = strcat(obj.prefix, "adb pull ", obj.sMobileDir, "/data/",cLine{4}, " ",sFolder_quest);
 
                         [status, ~] = system(sCommand_quest);
                         vStatus = [vStatus, status];
@@ -1769,7 +1777,7 @@ classdef olMEGA_DataExtraction < handle
 
                     cLine = split(cLines_features{iFeature});
                     if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
-                        sCommand_features = [obj.prefix, 'adb pull ', obj.sMobileDir, '/features/',cLine{4},' ', sFolder_features];
+                        sCommand_features = strcat(obj.prefix, "adb pull ", obj.sMobileDir, "/features/",cLine{4}," ", sFolder_features);
                         [status, ~] = system(sCommand_features);
                         vStatus = [vStatus, status];
 
@@ -2016,25 +2024,7 @@ classdef olMEGA_DataExtraction < handle
                 end
                 
             end
-            
-            %             for iArea = 1:length(vBluetooth)-1
-            %                 vX = [vTimeBluetooth(iArea), vTimeBluetooth(iArea), ...
-            %                     vTimeBluetooth(iArea+1), vTimeBluetooth(iArea+1)];
-            %                 vY = [0, 0.5, 0.5, 0];
-            %
-            %                 if vBluetooth(iArea) == 0
-            %                     p = patch(obj.hAxes, vX, vY, 'r');
-            %                 else
-            %                     p = patch(obj.hAxes, vX, vY, 'g');
-            %                 end
-            %                 p.LineStyle = 'none';
-            %
-            %                 if iArea == 1
-            %                     obj.hAxes.NextPlot = 'add';
-            %                 end
-            %             end
-            
-            
+           
             % Extract and plot feature data
             
             configStruct.lowerBinCohe = 1100;
@@ -2141,133 +2131,8 @@ classdef olMEGA_DataExtraction < handle
                     p.LineStyle = 'none';
 
                 end
-                
-%                 % PSD
-%                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1);
-%                 if isnan(sum(cError{:}))
-%                     cError = {1};
-%                 elseif isempty(cError{:})
-%                     cError = {0};
-%                 end
-%                 p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
-%                 p.LineStyle = 'none';
-%                 % RMS
-%                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+2
-%                 if isnan(sum(cError{:}))
-%                     cError = {1};
-%                 elseif isempty(cError{:})
-%                     cError = {0};
-%                 end
-%                 p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
-%                 p.LineStyle = 'none';
-%                 % ZCR
-%                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+3
-%                 if isnan(sum(cError{:}))
-%                     cError = {1};
-%                 elseif isempty(cError{:})
-%                     cError = {0};
-%                 end
-%                 p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
-%                 p.LineStyle = 'none';
-                
             end
-            
-            
-            
-            
-            
-            1;
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-%             for iFile = 1 : 3 : length(stSubject.chunkID.FileName)
-%                 
-%                 % Extract datetime from feature file names
-%                 sDate = stSubject.chunkID.FileName(iFile);
-%                 
-%                 if strcmp(sDate{:}(4), '_') && strcmp(sDate{:}(11), '_')
-%                     bIsOldFormat = true;
-%                 else
-%                     bIsOldFormat = false;
-%                 end
-%                 
-%                 if bIsOldFormat
-%                     sDate = sDate{:}(12 : end - 5);
-%                 else
-%                     sDate = sDate{:}(5 : end - 5);
-%                 end
-%                 
-%                 sDate = [sDate(1:4), '-', sDate(5 : 6), '-', sDate(7 : 8), ' ', sDate(10 : 11), ':', sDate(12 : 13), ':', sDate(14 : 15), '.', sDate(16 : end)];
-%                 
-%                 mFeatureTime((iFile - 1) / 3 + 1, 1) = stringToTimeMs(sDate) - nMinTime;
-%                 mFeatureTime((iFile - 1) / 3 + 1, 2) = mFeatureTime((iFile - 1) / 3 + 1, 1) + 60*1000;
-%                 
-%                 vX = [mFeatureTime((iFile - 1) / 3 + 1, 1), mFeatureTime((iFile - 1) / 3 + 1, 1), ...
-%                     mFeatureTime((iFile - 1) / 3 + 1, 2), mFeatureTime((iFile - 1) / 3 + 1, 2)];
-%                 
-%                 % PSD
-%                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1);
-%                 if isnan(sum(cError{:}))
-%                     cError = {1};
-%                 elseif isempty(cError{:})
-%                     cError = {0};
-%                 end
-%                 p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
-%                 p.LineStyle = 'none';
-%                 % RMS
-%                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+2
-%                 if isnan(sum(cError{:}))
-%                     cError = {1};
-%                 elseif isempty(cError{:})
-%                     cError = {0};
-%                 end
-%                 p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
-%                 p.LineStyle = 'none';
-%                 % ZCR
-%                 cError = stSubject.chunkID.PercentageError((iFile - 1) / 3 + 1); %+3
-%                 if isnan(sum(cError{:}))
-%                     cError = {1};
-%                 elseif isempty(cError{:})
-%                     cError = {0};
-%                 end
-%                 p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
-%                 p.LineStyle = 'none';
-%                 
-%             end
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+           
             % Obtain questionnaire data
             if obj.isHallo
                 sFolderQuest = [obj.stSubject.Folder, filesep, obj.stSubject.Name,'_Mobeval'];

@@ -46,6 +46,27 @@ ICA_DataAnalysis
 [obj].stAnalysis
 ```
 
+### Own Voice Detection (OVD):
+* Command Line:
+
+```matlab
+[vPredictedOVS, vTime] = detectOwnVoiceRandomForest(obj, [struct with time info]);
+```
+The folder `olMEGA_DataExtraction` contains the subfolders `functions_application > evaluation`.
+The folder `evaluation` contains the function `detectOwnVoiceRandomForest` and its test-script `detectOwnVoiceRandomForestTest`.
+For a simple test adjust `detectOwnVoiceRandomForestTest`:
+
+1. `szBaseDir`: customize the path to your main data folder
+
+2. `szCurrentFolder`: choose the name of one subject folder (e.g. SF170777_210720_SF)
+
+3. `stDate`: adjust time informations for prediction: start and end day as datetime and start and end time as duration
+
+ … and run. The function `detectOwnVoiceRandomForest` returns the vector `vPredictedOVS` containing the predicted OVS (1 = OVS, 0 = no OVS) and the corresponding time vector `vTime`.
+
+The OVD calls a feature extraction, which processes data in 1 hour intervals and can take a while, if a longer time period is chosen. We recommend to call `detectOwnVoiceRandomForest` per day.
+If for the given input day and time no feature files exist, a short warning occurs and `vPredictedOVS` and `vTime` are empty.
+
 
 ## License:
 

@@ -34,7 +34,7 @@ if( fid ) && fid ~= -1
     while ~feof(fid)
         
         if nBlocks == 0
-            headerSizes = [29, 36, 48];
+            headerSizes = [29, 36, 48, 64];
             fseek(fid, 0, 'eof');
             fileSize = ftell(fid);
             fseek(fid, 0, 'bof');
@@ -54,6 +54,11 @@ if( fid ) && fid ~= -1
                 mBlockTime = datevec(fread(fid, 9, '*char', cMachineFormat{:})','HHMMSSFFF');
             else
                 mBlockTime = datevec(fread(fid, 16, '*char', cMachineFormat{:})','yymmdd_HHMMSSFFF');
+                if ProtokollVersion >= 3
+                    stInfo.SystemTime = datevec(fread(fid, 16, '*char', cMachineFormat{:})','yymmdd_HHMMSSFFF');
+                else
+                    stInfo.SystemTime = mBlockTime;
+                end
             end
             stInfo.calibrationInDb = [0 0];
             if ProtokollVersion >= 2

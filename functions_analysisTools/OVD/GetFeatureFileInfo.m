@@ -34,8 +34,7 @@ if( fid ) && fid ~= -1
     while ~feof(fid)
         
         if nBlocks == 0
-            % START: Determination of the protocol version
-            headerSizes = [29, 36, 48];
+            headerSizes = [29, 36, 48, 64];
             fseek(fid, 0, 'eof');
             fileSize = ftell(fid);
             fseek(fid, 0, 'bof');
@@ -48,7 +47,6 @@ if( fid ) && fid ~= -1
                 vFrames = double(fread( fid, 1, 'int32', cMachineFormat{:}));
                 nDim = double(fread( fid, 1, 'int32', cMachineFormat{:}));
             end
-            % END: Determination of the protocol version
             stInfo.FrameSizeInSamples = double( fread(fid, 1, 'int32', cMachineFormat{:}));
             stInfo.HopSizeInSamples = double( fread(fid, 1, 'int32', cMachineFormat{:}));
             stInfo.fs = double( fread(fid, 1, 'int32', cMachineFormat{:}));
@@ -56,6 +54,11 @@ if( fid ) && fid ~= -1
                 mBlockTime = datevec(fread(fid, 9, '*char', cMachineFormat{:})','HHMMSSFFF');
             else
                 mBlockTime = datevec(fread(fid, 16, '*char', cMachineFormat{:})','yymmdd_HHMMSSFFF');
+                if ProtokollVersion >= 3
+                    stInfo.SystemTime = datevec(fread(fid, 16, '*char', cMachineFormat{:})','yymmdd_HHMMSSFFF');
+                else
+                    stInfo.SystemTime = mBlockTime;
+                end
             end
             stInfo.calibrationInDb = [0 0];
             if ProtokollVersion >= 2
@@ -63,6 +66,7 @@ if( fid ) && fid ~= -1
             end            
             stInfo.nBytesHeader = headerSizes(ProtokollVersion + 1);
             stInfo.ProtokollVersion = ProtokollVersion - 1;
+            %             mBlockTime = datevec(fread(fid, 9, '*char', cMachineFormat{:})','HHMMSSFFF');
             fseek(fid, vFrames(1)*nDim*4, 0);
         else
             try
@@ -89,7 +93,7 @@ if( fid ) && fid ~= -1
     % add correct date to blocktime
     [~, szFilename] = fileparts(szFilename);
     if ProtokollVersion == 0
-        vDate = datevec( szFilename(5:end), 'yyyymmdd' );
+        vDate = datevec( szFilename(5:end), 'yyyymmdd' ); %+7 f�r neue
         mBlockTime(:,1:3) = repmat(vDate(1:3),size(mBlockTime,1),1);
     end
     stInfo.nDimensions = nDim; % including time
@@ -160,7 +164,7 @@ if( fid ) && fid ~= -1
     
 else
     % If the "fopen" command has failed...
-    error('Unable to open file "%s".\n', szFilename);
+    warning('Unable to open file "%s".\n', szFilename);
 end
 
 %--------------------Licence ---------------------------------------------

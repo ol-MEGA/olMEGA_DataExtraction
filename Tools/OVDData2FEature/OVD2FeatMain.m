@@ -25,34 +25,6 @@ AllPSDFiles = dir ([curDirFeat 'PSD_*']);
 
 load ([AllOVDFiles(1).folder filesep AllOVDFiles(1).name])
 
-function saveDroidFeatureFile (szFilename, stInfo, Data)
-% function saveDroidFeatureFile (suFiename, stInfo, Data)
-% stData struct which must contain the following information
-% stData.fs : = the sampling rate of the original audiodata
-% stData.hopsizeInSamples := the hopsize of the feature 
-% stData.blockStartTime := the correspong datetime of the whole chunk in
-% datenum format 
-% stInfo.FrameSizeInSamples
-
-cMachineFormat = {'b'};
-stInfo.calibrationInDb = [0 0];
-[stInfo.numFrames, stInfo.Dims] = size(Data);
-
-fid = fopen(szFilename,'w',cMachineFormat);
-
-fwrite(fid,2,'int32',[],cMachineFormat); % protokoll format 2
-fwrite(fid,stInfo.numFrames,'int32',[],cMachineFormat);
-fwrite(fid,stInfo.Dims,'int32',[],cMachineFormat);
-fwrite(fid,stInfo.FrameSizeInSamples,'int32',[],cMachineFormat);
-fwrite(fid,stInfo.hopsizeInSamples,'int32',[],cMachineFormat);
-fwrite(fid,stInfo.fs,'int32',[],cMachineFormat);
-fwrite(fid, datestr(stInfo.blockStartTime,'yymmdd_HHMMSSFFF'),'char',[],cMachineFormat);
-
-
-fclose(fid);
-
-end
-
 
 
 

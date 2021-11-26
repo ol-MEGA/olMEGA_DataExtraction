@@ -60,7 +60,7 @@ if (fid)
     if nargin > 1
         nBytesFrame = stInfo.nDimensions * 4;
         
-        if numel(start) > 1
+        if numel(start) > 1 
             % find index of nearest block (start).
             [val, idxStart] = min(abs(datenum(stInfo.mBlockTime) - datenum([stInfo.mBlockTime(1,1:3) start])));
         else

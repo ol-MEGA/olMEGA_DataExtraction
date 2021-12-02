@@ -1,5 +1,8 @@
 
 classdef olMEGA_DataExtraction < handle
+
+    % Changelog:
+    % 21-12-02 - Erasing routine optmised after reported malfunction
     
     properties
         
@@ -1498,51 +1501,58 @@ classdef olMEGA_DataExtraction < handle
             sCommand_quest = [obj.prefix, 'adb ls ', obj.sMobileDir, '/data'];
             [~, cmdout] = system(sCommand_quest);
             cLines_features = splitlines(cmdout);
-            cLines_features(1:2) = [];
+%             cLines_features(1:2) = [];
             nLines_features = length(cLines_features);
             
-            obj.cListQuestionnaire{end} = 'Erasing questionnaire files: 0%';
-            obj.hListBox.Value = obj.cListQuestionnaire;
-            
-            nApproxTime = 0;
-            tic;
-            iCount = 0;
-            
-            for iFeature = randperm(nLines_features)
+            if length(cLines_features) > 3
+
+                obj.cListQuestionnaire{end} = 'Erasing questionnaire files: 0%';
+                obj.hListBox.Value = obj.cListQuestionnaire;
                 
-                if obj.bIsPhoneConnected
+                nApproxTime = 0;
+                tic;
+                iCount = 0;
                 
-                    iCount = iCount + 1;
-
-                    cLine = split(cLines_features{iFeature});
-                    if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
-                        sCommand_features = [obj.prefix, 'adb shell rm ', obj.sMobileDir, '/data/',cLine{4}];
-                        [status, ~] = system(sCommand_features);
-                        vStatus = [vStatus, status];
-
-                        nTimeTaken = toc;
-                        nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
-
-                        obj.cListQuestionnaire{end} = sprintf('Erasing questionnaire files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
+                for iFeature = randperm(nLines_features)
+                    
+                    if obj.bIsPhoneConnected
+                    
+                        iCount = iCount + 1;
+    
+                        cLine = split(cLines_features{iFeature});
+                        if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
+                            sCommand_features = [obj.prefix, 'adb shell rm ', obj.sMobileDir, '/data/',cLine{4}];
+                            [status, ~] = system(sCommand_features);
+                            vStatus = [vStatus, status];
+    
+                            nTimeTaken = toc;
+                            nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
+    
+                            obj.cListQuestionnaire{end} = sprintf('Erasing questionnaire files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
+                            obj.hListBox.Value = obj.cListQuestionnaire;
+                            drawnow;
+                        end
+                    
+                    else
+                        errordlg('Device was disconnected. Process was aborted.');
+                        obj.cListQuestionnaire{end} = 'Erasing process aborted.';
                         obj.hListBox.Value = obj.cListQuestionnaire;
+                        obj.hLabel_Calculating.Text = 'Calculating';
+                        obj.hLabel_Calculating.Visible = 'Off';
+                        obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
                         drawnow;
+                        return;
                     end
-                
-                else
-                    errordlg('Device was disconnected. Process was aborted.');
-                    obj.cListQuestionnaire{end} = 'Erasing process aborted.';
-                    obj.hListBox.Value = obj.cListQuestionnaire;
-                    obj.hLabel_Calculating.Text = 'Calculating';
-                    obj.hLabel_Calculating.Visible = 'Off';
-                    obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
-                    drawnow;
-                    return;
+                    
                 end
                 
+                obj.cListQuestionnaire{end} = sprintf('Erasing questionnaire files: %.0i%%', 100);
+                obj.hListBox.Value = obj.cListQuestionnaire;
+
+            else
+                obj.cListQuestionnaire{end+1} = sprintf('No questionnaire data found.');
+                obj.hListBox.Value = obj.cListQuestionnaire;
             end
-            
-            obj.cListQuestionnaire{end} = sprintf('Erasing questionnaire files: %.0i%%', 100);
-            obj.hListBox.Value = obj.cListQuestionnaire;
             
             sCommand_erase_quest = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///',obj.sMobileDir, '/data'];
             [status, ~] = system(sCommand_erase_quest);
@@ -1556,48 +1566,55 @@ classdef olMEGA_DataExtraction < handle
             cLines_features(1:2) = [];
             nLines_features = length(cLines_features);
             
-            obj.cListQuestionnaire{end} = 'Erasing feature files: 0%';
-            obj.hListBox.Value = obj.cListQuestionnaire;
-            
-            nApproxTime = 0;
-            tic;
-            iCount = 0;
-            
-            for iFeature = randperm(nLines_features)
+            if ~isempty(cLines_features{1})
+        
+                obj.cListQuestionnaire{end} = 'Erasing feature files: 0%';
+                obj.hListBox.Value = obj.cListQuestionnaire;
                 
-                if obj.bIsPhoneConnected
+                nApproxTime = 0;
+                tic;
+                iCount = 0;
                 
-                iCount = iCount + 1;
-                
-                cLine = split(cLines_features{iFeature});
-                if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
-                    sCommand_features = [obj.prefix, 'adb shell rm ', obj.sMobileDir, '/features/',cLine{4}];
-                    [status, ~] = system(sCommand_features);
-                    vStatus = [vStatus, status];
+                for iFeature = randperm(nLines_features)
                     
-                    nTimeTaken = toc;
-                    nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
+                    if obj.bIsPhoneConnected
                     
-                    obj.cListQuestionnaire{end} = sprintf('Erasing feature files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
-                    obj.hListBox.Value = obj.cListQuestionnaire;
-                    drawnow;
+                    iCount = iCount + 1;
+                    
+                    cLine = split(cLines_features{iFeature});
+                    if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
+                        sCommand_features = [obj.prefix, 'adb shell rm ', obj.sMobileDir, '/features/',cLine{4}];
+                        [status, ~] = system(sCommand_features);
+                        vStatus = [vStatus, status];
+                        
+                        nTimeTaken = toc;
+                        nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
+                        
+                        obj.cListQuestionnaire{end} = sprintf('Erasing feature files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
+                        obj.hListBox.Value = obj.cListQuestionnaire;
+                        drawnow;
+                    end
+                    
+                    else
+                        errordlg('Device was disconnected. Process was aborted.');
+                        obj.cListQuestionnaire{end} = 'Erasing process aborted.';
+                        obj.hListBox.Value = obj.cListQuestionnaire;
+                        obj.hLabel_Calculating.Text = 'Calculating';
+                        obj.hLabel_Calculating.Visible = 'Off';
+                        obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
+                        drawnow;
+                        return;
+                    end
+                    
                 end
                 
-                else
-                    errordlg('Device was disconnected. Process was aborted.');
-                    obj.cListQuestionnaire{end} = 'Erasing process aborted.';
-                    obj.hListBox.Value = obj.cListQuestionnaire;
-                    obj.hLabel_Calculating.Text = 'Calculating';
-                    obj.hLabel_Calculating.Visible = 'Off';
-                    obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
-                    drawnow;
-                    return;
-                end
-                
+                obj.cListQuestionnaire{end} = sprintf('Erasing feature files: %.0i%%', 100);
+                obj.hListBox.Value = obj.cListQuestionnaire;
+        
+            else
+                obj.cListQuestionnaire{end+1} = sprintf('No feature data found.');
+                obj.hListBox.Value = obj.cListQuestionnaire;
             end
-            
-            obj.cListQuestionnaire{end} = sprintf('Erasing feature files: %.0i%%', 100);
-            obj.hListBox.Value = obj.cListQuestionnaire;
             
             sCommand_erase_features = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///',obj.sMobileDir, '/features'];
             [status, ~] = system(sCommand_erase_features);

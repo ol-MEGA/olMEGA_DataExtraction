@@ -2,7 +2,7 @@
 classdef olMEGA_DataExtraction < handle
 
     % Changelog:
-    % 21-12-02 - Erasing routine optmised after reported malfunction
+    % 21-12-02 (UK) - Erasing routine optmised after reported malfunction
     
     properties
         

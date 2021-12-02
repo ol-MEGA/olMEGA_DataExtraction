@@ -7,13 +7,14 @@
 %   output:
 %       stInfo              parameter and metadata
 %
-% Auth: Sven Fischer, Joerg Bitzer
+% Auth: Sven Fischer, Joerg Bitzer, Sven Franz
 % Vers: v0.20
 % Vers v0.3 JB, Vise deleted and new stInfo introduced
 % v0.4 SK, force big endian for java compatability
 % v0.5 SK, fork to read android data (multiple blocks with a header each)
 %          changed naming convention, frames vs. blocks.
 % v0.6 SK, fixed session detection
+% v0.7 SF, new header version (for details see end of code)
 
 function stInfo = GetFeatureFileInfo( szFilename, bInfo )
 
@@ -34,13 +35,13 @@ if( fid ) && fid ~= -1
     while ~feof(fid)
         
         if nBlocks == 0
-            headerSizes = [29, 36, 48];
+            headerSizes = [29, 36, 48, 64];
             fseek(fid, 0, 'eof');
             fileSize = ftell(fid);
             fseek(fid, 0, 'bof');
             vFrames = double(fread( fid, 1, 'int32', cMachineFormat{:}));
             nDim = double(fread( fid, 1, 'int32', cMachineFormat{:}));
-            ProtokollVersion = find(vFrames * nDim * 4 + headerSizes == fileSize, 1, 'first') - 1;
+            ProtokollVersion = find(vFrames * nDim * 4 + headerSizes(1:2) == fileSize, 1, 'first') - 1;
             if isempty(ProtokollVersion)
                 fseek(fid, 0, 'bof');
                 ProtokollVersion = double(fread( fid, 1, 'int32', cMachineFormat{:}));
@@ -54,13 +55,18 @@ if( fid ) && fid ~= -1
                 mBlockTime = datevec(fread(fid, 9, '*char', cMachineFormat{:})','HHMMSSFFF');
             else
                 mBlockTime = datevec(fread(fid, 16, '*char', cMachineFormat{:})','yymmdd_HHMMSSFFF');
+                if ProtokollVersion >= 3
+                    stInfo.SystemTime = datevec(fread(fid, 16, '*char', cMachineFormat{:})','yymmdd_HHMMSSFFF');
+                else
+                    stInfo.SystemTime = mBlockTime;
+                end
             end
             stInfo.calibrationInDb = [0 0];
             if ProtokollVersion >= 2
                 stInfo.calibrationInDb = [double(fread(fid, 1, 'float32', cMachineFormat{:})) double(fread(fid, 1, 'float32', cMachineFormat{:}))];
             end            
             stInfo.nBytesHeader = headerSizes(ProtokollVersion + 1);
-            stInfo.ProtokollVersion = ProtokollVersion - 1;
+            stInfo.ProtokollVersion = ProtokollVersion;
             %             mBlockTime = datevec(fread(fid, 9, '*char', cMachineFormat{:})','HHMMSSFFF');
             fseek(fid, vFrames(1)*nDim*4, 0);
         else
@@ -161,6 +167,40 @@ else
     % If the "fopen" command has failed...
     warning('Unable to open file "%s".\n', szFilename);
 end
+
+%% Feature Header Protokoll-Version 1
+% Byte  1 - Byte  4: Block Count (Integer)
+% Byte  5 - Byte  8: Feature Dimensions (Integer)
+% Byte  9 - Byte 12: Block Size (Integer)
+% Byte 13 - Byte 16: Hop Size (Integer)
+% Byte 17 - Byte 20: Samplingrate (Integer)
+% Byte 21 - Byte 24: Timestamp (YYMMDD_hhmmssSSS)
+% Byte 25 - EOF    : FEATRUE-DATA
+% 
+%% Feature Header Protokoll-Version 2
+% Byte  1 - Byte  4: Protokoll Version (Integer)
+% Byte  5 - Byte  8: Block Count (Integer)
+% Byte  9 - Byte 12: Feature Dimensions (Integer)
+% Byte 13 - Byte 16: Block Size (Integer)
+% Byte 17 - Byte 20: Hop Size (Integer)
+% Byte 21 - Byte 24: Samplingrate (Integer)
+% Byte 25 - Byte 40: Timestamp (YYMMDD_hhmmssSSS)
+% Byte 41 - Byte 44: Calibration Value in dB, Channel 1 (Float)
+% Byte 45 - Byte 48: Calibration Value in dB, Channel 1 (Float)
+% Byte 49 - EOF    : FEATRUE-DATA
+% 
+%% Feature Header Protokoll-Version 3
+% Byte  1 - Byte  4: Protokoll Version (Integer)
+% Byte  5 - Byte  8: Block Count (Integer)
+% Byte  9 - Byte 12: Feature Dimensions (Integer)
+% Byte 13 - Byte 16: Block Size (Integer)
+% Byte 17 - Byte 20: Hop Size (Integer)
+% Byte 21 - Byte 24: Samplingrate (Integer)
+% Byte 25 - Byte 40: Sample-Timestamp (YYMMDD_hhmmssSSS)
+% Byte 41 - Byte 56: SystemClock-Timestamp (YYMMDD_hhmmssSSS)
+% Byte 57 - Byte 60: Calibration Value in dB, Channel 1 (Float)
+% Byte 61 - Byte 64: Calibration Value in dB, Channel 1 (Float)
+% Byte 65 - EOF    : FEATRUE-DATA
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2005- 2012> J.Bitzer, Sven Fischer

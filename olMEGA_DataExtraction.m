@@ -2,7 +2,9 @@
 classdef olMEGA_DataExtraction < handle
 
     % Changelog:
-    % 21-12-02 (UK) - Erasing routine optmised after reported malfunction
+    % 21-12-02, UK: - Erasing routine optmised after reported malfunction
+    % 21-12-02, UK: - Subject validation improved for cases with valid log
+    %                 file, but no feature data
     
     properties
         
@@ -1866,6 +1868,12 @@ classdef olMEGA_DataExtraction < handle
             cLog = fileread(fullfile(obj.stSubject.Folder,sFileName));
             cLog = replaceBetween(cLog, "<begin stacktrace>", "<end stacktrace>", "Error");
             cLog = splitlines(cLog);
+
+            if length(cLog) < 3
+                obj.cListQuestionnaire{end+1} = 'Log contains no valid information.';
+                obj.hListBox.Value = obj.cListQuestionnaire;
+                return
+            end
             
             obj.vProportions = zeros(obj.nStates, 1);
             
@@ -2052,101 +2060,106 @@ classdef olMEGA_DataExtraction < handle
             configStruct.errorTolerance = 0.05; % 5 percent
             
             stValidation = validatesubject(obj, configStruct);
-            load([obj.stSubject.Folder, filesep, obj.stSubject.Name]);
-            
-            % Print Objective Feature Existence and Error Percentage per Feature File
-            mFeatureTime = zeros(ceil(length(stSubject.chunkID.FileName) / 3), 2);
-            
-            nPSD = 0;
-            nRMS = 0;
-            nZCR = 0;
-           
-            for iFile = 1 : 1 : length(stSubject.chunkID.FileName)
-                
-                sFeatureFile = stSubject.chunkID.FileName(iFile);
-                sFeatureFile = sFeatureFile{1};
-                
-                if contains(sFeatureFile, 'PSD')
-                    nPSD = nPSD + 1;
-                    
-                    cError = stSubject.chunkID.PercentageError(iFile);
-                    if isnan(sum(cError{:}))
-                        cError = {1};
-                    elseif isempty(cError{:})
-                        cError = {0};
-                    end
-                    
-                    sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
-                    sInfo = GetFeatureFileInfo(sFullFile);
-                    vStartTime =  sInfo.StartTime;
-                    
-                    if (vStartTime(6) < 10)
-                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
-                    else
-                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
-                    end
-                    
-                    nTimeIn = stringToTimeMs(sDate) - nMinTime;
-                    nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
-                    vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
-                    
-                    p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
-                    p.LineStyle = 'none';
-                    
-                elseif contains(sFeatureFile, 'RMS')
-                    nRMS = nRMS + 1;
-                    
-                    cError = stSubject.chunkID.PercentageError(iFile);
-                    if isnan(sum(cError{:}))
-                        cError = {1};
-                    elseif isempty(cError{:})
-                        cError = {0};
-                    end
-                    
-                    sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
-                    sInfo = GetFeatureFileInfo(sFullFile);
-                    vStartTime =  sInfo.StartTime;
-                    
-                    if (vStartTime(6) < 10)
-                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
-                    else
-                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
-                    end
-                    
-                    nTimeIn = stringToTimeMs(sDate) - nMinTime;
-                    nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
-                    vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
-                    
-                    p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
-                    p.LineStyle = 'none';
 
-                elseif contains(sFeatureFile, 'ZCR')
-                    nZCR = nZCR + 1;
+            % if there is valid feature data available
+            if ~isempty(stValidation)
+                
+                load([obj.stSubject.Folder, filesep, obj.stSubject.Name]);
+                
+                % Print Objective Feature Existence and Error Percentage per Feature File
+                mFeatureTime = zeros(ceil(length(stSubject.chunkID.FileName) / 3), 2);
+                
+                nPSD = 0;
+                nRMS = 0;
+                nZCR = 0;
+               
+                for iFile = 1 : 1 : length(stSubject.chunkID.FileName)
                     
-                    cError = stSubject.chunkID.PercentageError(iFile);
-                    if isnan(sum(cError{:}))
-                        cError = {1};
-                    elseif isempty(cError{:})
-                        cError = {0};
+                    sFeatureFile = stSubject.chunkID.FileName(iFile);
+                    sFeatureFile = sFeatureFile{1};
+                    
+                    if contains(sFeatureFile, 'PSD')
+                        nPSD = nPSD + 1;
+                        
+                        cError = stSubject.chunkID.PercentageError(iFile);
+                        if isnan(sum(cError{:}))
+                            cError = {1};
+                        elseif isempty(cError{:})
+                            cError = {0};
+                        end
+                        
+                        sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
+                        sInfo = GetFeatureFileInfo(sFullFile);
+                        vStartTime =  sInfo.StartTime;
+                        
+                        if (vStartTime(6) < 10)
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
+                        else
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
+                        end
+                        
+                        nTimeIn = stringToTimeMs(sDate) - nMinTime;
+                        nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                        vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+                        
+                        p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
+                        p.LineStyle = 'none';
+                        
+                    elseif contains(sFeatureFile, 'RMS')
+                        nRMS = nRMS + 1;
+                        
+                        cError = stSubject.chunkID.PercentageError(iFile);
+                        if isnan(sum(cError{:}))
+                            cError = {1};
+                        elseif isempty(cError{:})
+                            cError = {0};
+                        end
+                        
+                        sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
+                        sInfo = GetFeatureFileInfo(sFullFile);
+                        vStartTime =  sInfo.StartTime;
+                        
+                        if (vStartTime(6) < 10)
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
+                        else
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
+                        end
+                        
+                        nTimeIn = stringToTimeMs(sDate) - nMinTime;
+                        nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                        vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+                        
+                        p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
+                        p.LineStyle = 'none';
+    
+                    elseif contains(sFeatureFile, 'ZCR')
+                        nZCR = nZCR + 1;
+                        
+                        cError = stSubject.chunkID.PercentageError(iFile);
+                        if isnan(sum(cError{:}))
+                            cError = {1};
+                        elseif isempty(cError{:})
+                            cError = {0};
+                        end
+                        
+                        sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
+                        sInfo = GetFeatureFileInfo(sFullFile);
+                        vStartTime =  sInfo.StartTime;
+                        
+                        if (vStartTime(6) < 10)
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
+                        else
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
+                        end
+                        
+                        nTimeIn = stringToTimeMs(sDate) - nMinTime;
+                        nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                        vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+                        
+                        p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
+                        p.LineStyle = 'none';
+    
                     end
-                    
-                    sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
-                    sInfo = GetFeatureFileInfo(sFullFile);
-                    vStartTime =  sInfo.StartTime;
-                    
-                    if (vStartTime(6) < 10)
-                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
-                    else
-                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
-                    end
-                    
-                    nTimeIn = stringToTimeMs(sDate) - nMinTime;
-                    nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
-                    vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
-                    
-                    p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
-                    p.LineStyle = 'none';
-
                 end
             end
            

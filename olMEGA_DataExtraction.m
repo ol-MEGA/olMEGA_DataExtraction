@@ -1,5 +1,10 @@
 
 classdef olMEGA_DataExtraction < handle
+
+    % Changelog:
+    % 21-12-02, UK: - Erasing routine optmised after reported malfunction
+    % 21-12-02, UK: - Subject validation improved for cases with valid log
+    %                 file, but no feature data
     
     properties
         
@@ -1498,51 +1503,58 @@ classdef olMEGA_DataExtraction < handle
             sCommand_quest = [obj.prefix, 'adb ls ', obj.sMobileDir, '/data'];
             [~, cmdout] = system(sCommand_quest);
             cLines_features = splitlines(cmdout);
-            cLines_features(1:2) = [];
+%             cLines_features(1:2) = [];
             nLines_features = length(cLines_features);
             
-            obj.cListQuestionnaire{end} = 'Erasing questionnaire files: 0%';
-            obj.hListBox.Value = obj.cListQuestionnaire;
-            
-            nApproxTime = 0;
-            tic;
-            iCount = 0;
-            
-            for iFeature = randperm(nLines_features)
+            if length(cLines_features) > 3
+
+                obj.cListQuestionnaire{end} = 'Erasing questionnaire files: 0%';
+                obj.hListBox.Value = obj.cListQuestionnaire;
                 
-                if obj.bIsPhoneConnected
+                nApproxTime = 0;
+                tic;
+                iCount = 0;
                 
-                    iCount = iCount + 1;
-
-                    cLine = split(cLines_features{iFeature});
-                    if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
-                        sCommand_features = [obj.prefix, 'adb shell rm ', obj.sMobileDir, '/data/',cLine{4}];
-                        [status, ~] = system(sCommand_features);
-                        vStatus = [vStatus, status];
-
-                        nTimeTaken = toc;
-                        nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
-
-                        obj.cListQuestionnaire{end} = sprintf('Erasing questionnaire files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
+                for iFeature = randperm(nLines_features)
+                    
+                    if obj.bIsPhoneConnected
+                    
+                        iCount = iCount + 1;
+    
+                        cLine = split(cLines_features{iFeature});
+                        if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
+                            sCommand_features = [obj.prefix, 'adb shell rm ', obj.sMobileDir, '/data/',cLine{4}];
+                            [status, ~] = system(sCommand_features);
+                            vStatus = [vStatus, status];
+    
+                            nTimeTaken = toc;
+                            nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
+    
+                            obj.cListQuestionnaire{end} = sprintf('Erasing questionnaire files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
+                            obj.hListBox.Value = obj.cListQuestionnaire;
+                            drawnow;
+                        end
+                    
+                    else
+                        errordlg('Device was disconnected. Process was aborted.');
+                        obj.cListQuestionnaire{end} = 'Erasing process aborted.';
                         obj.hListBox.Value = obj.cListQuestionnaire;
+                        obj.hLabel_Calculating.Text = 'Calculating';
+                        obj.hLabel_Calculating.Visible = 'Off';
+                        obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
                         drawnow;
+                        return;
                     end
-                
-                else
-                    errordlg('Device was disconnected. Process was aborted.');
-                    obj.cListQuestionnaire{end} = 'Erasing process aborted.';
-                    obj.hListBox.Value = obj.cListQuestionnaire;
-                    obj.hLabel_Calculating.Text = 'Calculating';
-                    obj.hLabel_Calculating.Visible = 'Off';
-                    obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
-                    drawnow;
-                    return;
+                    
                 end
                 
+                obj.cListQuestionnaire{end} = sprintf('Erasing questionnaire files: %.0i%%', 100);
+                obj.hListBox.Value = obj.cListQuestionnaire;
+
+            else
+                obj.cListQuestionnaire{end+1} = sprintf('No questionnaire data found.');
+                obj.hListBox.Value = obj.cListQuestionnaire;
             end
-            
-            obj.cListQuestionnaire{end} = sprintf('Erasing questionnaire files: %.0i%%', 100);
-            obj.hListBox.Value = obj.cListQuestionnaire;
             
             sCommand_erase_quest = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///',obj.sMobileDir, '/data'];
             [status, ~] = system(sCommand_erase_quest);
@@ -1556,48 +1568,55 @@ classdef olMEGA_DataExtraction < handle
             cLines_features(1:2) = [];
             nLines_features = length(cLines_features);
             
-            obj.cListQuestionnaire{end} = 'Erasing feature files: 0%';
-            obj.hListBox.Value = obj.cListQuestionnaire;
-            
-            nApproxTime = 0;
-            tic;
-            iCount = 0;
-            
-            for iFeature = randperm(nLines_features)
+            if ~isempty(cLines_features{1})
+        
+                obj.cListQuestionnaire{end} = 'Erasing feature files: 0%';
+                obj.hListBox.Value = obj.cListQuestionnaire;
                 
-                if obj.bIsPhoneConnected
+                nApproxTime = 0;
+                tic;
+                iCount = 0;
                 
-                iCount = iCount + 1;
-                
-                cLine = split(cLines_features{iFeature});
-                if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
-                    sCommand_features = [obj.prefix, 'adb shell rm ', obj.sMobileDir, '/features/',cLine{4}];
-                    [status, ~] = system(sCommand_features);
-                    vStatus = [vStatus, status];
+                for iFeature = randperm(nLines_features)
                     
-                    nTimeTaken = toc;
-                    nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
+                    if obj.bIsPhoneConnected
                     
-                    obj.cListQuestionnaire{end} = sprintf('Erasing feature files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
-                    obj.hListBox.Value = obj.cListQuestionnaire;
-                    drawnow;
+                    iCount = iCount + 1;
+                    
+                    cLine = split(cLines_features{iFeature});
+                    if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
+                        sCommand_features = [obj.prefix, 'adb shell rm ', obj.sMobileDir, '/features/',cLine{4}];
+                        [status, ~] = system(sCommand_features);
+                        vStatus = [vStatus, status];
+                        
+                        nTimeTaken = toc;
+                        nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
+                        
+                        obj.cListQuestionnaire{end} = sprintf('Erasing feature files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
+                        obj.hListBox.Value = obj.cListQuestionnaire;
+                        drawnow;
+                    end
+                    
+                    else
+                        errordlg('Device was disconnected. Process was aborted.');
+                        obj.cListQuestionnaire{end} = 'Erasing process aborted.';
+                        obj.hListBox.Value = obj.cListQuestionnaire;
+                        obj.hLabel_Calculating.Text = 'Calculating';
+                        obj.hLabel_Calculating.Visible = 'Off';
+                        obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
+                        drawnow;
+                        return;
+                    end
+                    
                 end
                 
-                else
-                    errordlg('Device was disconnected. Process was aborted.');
-                    obj.cListQuestionnaire{end} = 'Erasing process aborted.';
-                    obj.hListBox.Value = obj.cListQuestionnaire;
-                    obj.hLabel_Calculating.Text = 'Calculating';
-                    obj.hLabel_Calculating.Visible = 'Off';
-                    obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
-                    drawnow;
-                    return;
-                end
-                
+                obj.cListQuestionnaire{end} = sprintf('Erasing feature files: %.0i%%', 100);
+                obj.hListBox.Value = obj.cListQuestionnaire;
+        
+            else
+                obj.cListQuestionnaire{end+1} = sprintf('No feature data found.');
+                obj.hListBox.Value = obj.cListQuestionnaire;
             end
-            
-            obj.cListQuestionnaire{end} = sprintf('Erasing feature files: %.0i%%', 100);
-            obj.hListBox.Value = obj.cListQuestionnaire;
             
             sCommand_erase_features = [obj.prefix, 'adb -d shell "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///',obj.sMobileDir, '/features'];
             [status, ~] = system(sCommand_erase_features);
@@ -1849,6 +1868,12 @@ classdef olMEGA_DataExtraction < handle
             cLog = fileread(fullfile(obj.stSubject.Folder,sFileName));
             cLog = replaceBetween(cLog, "<begin stacktrace>", "<end stacktrace>", "Error");
             cLog = splitlines(cLog);
+
+            if length(cLog) < 3
+                obj.cListQuestionnaire{end+1} = 'Log contains no valid information.';
+                obj.hListBox.Value = obj.cListQuestionnaire;
+                return
+            end
             
             obj.vProportions = zeros(obj.nStates, 1);
             
@@ -2035,101 +2060,106 @@ classdef olMEGA_DataExtraction < handle
             configStruct.errorTolerance = 0.05; % 5 percent
             
             stValidation = validatesubject(obj, configStruct);
-            load([obj.stSubject.Folder, filesep, obj.stSubject.Name]);
-            
-            % Print Objective Feature Existence and Error Percentage per Feature File
-            mFeatureTime = zeros(ceil(length(stSubject.chunkID.FileName) / 3), 2);
-            
-            nPSD = 0;
-            nRMS = 0;
-            nZCR = 0;
-           
-            for iFile = 1 : 1 : length(stSubject.chunkID.FileName)
-                
-                sFeatureFile = stSubject.chunkID.FileName(iFile);
-                sFeatureFile = sFeatureFile{1};
-                
-                if contains(sFeatureFile, 'PSD')
-                    nPSD = nPSD + 1;
-                    
-                    cError = stSubject.chunkID.PercentageError(iFile);
-                    if isnan(sum(cError{:}))
-                        cError = {1};
-                    elseif isempty(cError{:})
-                        cError = {0};
-                    end
-                    
-                    sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
-                    sInfo = GetFeatureFileInfo(sFullFile);
-                    vStartTime =  sInfo.StartTime;
-                    
-                    if (vStartTime(6) < 10)
-                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
-                    else
-                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
-                    end
-                    
-                    nTimeIn = stringToTimeMs(sDate) - nMinTime;
-                    nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
-                    vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
-                    
-                    p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
-                    p.LineStyle = 'none';
-                    
-                elseif contains(sFeatureFile, 'RMS')
-                    nRMS = nRMS + 1;
-                    
-                    cError = stSubject.chunkID.PercentageError(iFile);
-                    if isnan(sum(cError{:}))
-                        cError = {1};
-                    elseif isempty(cError{:})
-                        cError = {0};
-                    end
-                    
-                    sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
-                    sInfo = GetFeatureFileInfo(sFullFile);
-                    vStartTime =  sInfo.StartTime;
-                    
-                    if (vStartTime(6) < 10)
-                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
-                    else
-                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
-                    end
-                    
-                    nTimeIn = stringToTimeMs(sDate) - nMinTime;
-                    nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
-                    vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
-                    
-                    p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
-                    p.LineStyle = 'none';
 
-                elseif contains(sFeatureFile, 'ZCR')
-                    nZCR = nZCR + 1;
+            % if there is valid feature data available
+            if ~isempty(stValidation)
+                
+                load([obj.stSubject.Folder, filesep, obj.stSubject.Name]);
+                
+                % Print Objective Feature Existence and Error Percentage per Feature File
+                mFeatureTime = zeros(ceil(length(stSubject.chunkID.FileName) / 3), 2);
+                
+                nPSD = 0;
+                nRMS = 0;
+                nZCR = 0;
+               
+                for iFile = 1 : 1 : length(stSubject.chunkID.FileName)
                     
-                    cError = stSubject.chunkID.PercentageError(iFile);
-                    if isnan(sum(cError{:}))
-                        cError = {1};
-                    elseif isempty(cError{:})
-                        cError = {0};
+                    sFeatureFile = stSubject.chunkID.FileName(iFile);
+                    sFeatureFile = sFeatureFile{1};
+                    
+                    if contains(sFeatureFile, 'PSD')
+                        nPSD = nPSD + 1;
+                        
+                        cError = stSubject.chunkID.PercentageError(iFile);
+                        if isnan(sum(cError{:}))
+                            cError = {1};
+                        elseif isempty(cError{:})
+                            cError = {0};
+                        end
+                        
+                        sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
+                        sInfo = GetFeatureFileInfo(sFullFile);
+                        vStartTime =  sInfo.StartTime;
+                        
+                        if (vStartTime(6) < 10)
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
+                        else
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
+                        end
+                        
+                        nTimeIn = stringToTimeMs(sDate) - nMinTime;
+                        nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                        vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+                        
+                        p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
+                        p.LineStyle = 'none';
+                        
+                    elseif contains(sFeatureFile, 'RMS')
+                        nRMS = nRMS + 1;
+                        
+                        cError = stSubject.chunkID.PercentageError(iFile);
+                        if isnan(sum(cError{:}))
+                            cError = {1};
+                        elseif isempty(cError{:})
+                            cError = {0};
+                        end
+                        
+                        sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
+                        sInfo = GetFeatureFileInfo(sFullFile);
+                        vStartTime =  sInfo.StartTime;
+                        
+                        if (vStartTime(6) < 10)
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
+                        else
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
+                        end
+                        
+                        nTimeIn = stringToTimeMs(sDate) - nMinTime;
+                        nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                        vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+                        
+                        p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
+                        p.LineStyle = 'none';
+    
+                    elseif contains(sFeatureFile, 'ZCR')
+                        nZCR = nZCR + 1;
+                        
+                        cError = stSubject.chunkID.PercentageError(iFile);
+                        if isnan(sum(cError{:}))
+                            cError = {1};
+                        elseif isempty(cError{:})
+                            cError = {0};
+                        end
+                        
+                        sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
+                        sInfo = GetFeatureFileInfo(sFullFile);
+                        vStartTime =  sInfo.StartTime;
+                        
+                        if (vStartTime(6) < 10)
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
+                        else
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
+                        end
+                        
+                        nTimeIn = stringToTimeMs(sDate) - nMinTime;
+                        nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                        vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+                        
+                        p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
+                        p.LineStyle = 'none';
+    
                     end
-                    
-                    sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
-                    sInfo = GetFeatureFileInfo(sFullFile);
-                    vStartTime =  sInfo.StartTime;
-                    
-                    if (vStartTime(6) < 10)
-                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
-                    else
-                        sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
-                    end
-                    
-                    nTimeIn = stringToTimeMs(sDate) - nMinTime;
-                    nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
-                    vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
-                    
-                    p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
-                    p.LineStyle = 'none';
-
                 end
             end
            

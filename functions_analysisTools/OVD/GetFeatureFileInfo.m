@@ -15,6 +15,7 @@
 %          changed naming convention, frames vs. blocks.
 % v0.6 SK, fixed session detection
 % v0.7 SF, new header version (for details see end of code)
+% v0.8 SF, new V4 header version (for details see end of code)
 
 function stInfo = GetFeatureFileInfo( szFilename, bInfo )
 
@@ -23,6 +24,7 @@ if nargin < 2
 end
 %bInfo=0;
 cMachineFormat = {'b'};
+veryOldHeaderSizes = [29, 36]; % Header Sized of V0 and V1
 
 % Try to open the specified file for Binary Reading.
 fid = fopen( szFilename );
@@ -35,13 +37,12 @@ if( fid ) && fid ~= -1
     while ~feof(fid)
         
         if nBlocks == 0
-            headerSizes = [29, 36, 48, 64];
             fseek(fid, 0, 'eof');
             fileSize = ftell(fid);
             fseek(fid, 0, 'bof');
             vFrames = double(fread( fid, 1, 'int32', cMachineFormat{:}));
             nDim = double(fread( fid, 1, 'int32', cMachineFormat{:}));
-            ProtokollVersion = find(vFrames * nDim * 4 + headerSizes(1:2) == fileSize, 1, 'first') - 1;
+            ProtokollVersion = find(vFrames * nDim * 4 + veryOldHeaderSizes(1:2) == fileSize, 1, 'first') - 1;
             if isempty(ProtokollVersion)
                 fseek(fid, 0, 'bof');
                 ProtokollVersion = double(fread( fid, 1, 'int32', cMachineFormat{:}));
@@ -64,8 +65,14 @@ if( fid ) && fid ~= -1
             stInfo.calibrationInDb = [0 0];
             if ProtokollVersion >= 2
                 stInfo.calibrationInDb = [double(fread(fid, 1, 'float32', cMachineFormat{:})) double(fread(fid, 1, 'float32', cMachineFormat{:}))];
-            end            
-            stInfo.nBytesHeader = headerSizes(ProtokollVersion + 1);
+            end 
+            stInfo.AndroidID = '';
+            stInfo.BluetoothTransmitterMAC = '';
+            if ProtokollVersion >= 4
+                stInfo.AndroidID = fread(fid, 16, '*char', cMachineFormat{:})';
+                stInfo.BluetoothTransmitterMAC = fread(fid, 17, '*char', cMachineFormat{:})';
+            end
+            stInfo.nBytesHeader = ftell(fid);
             stInfo.ProtokollVersion = ProtokollVersion;
             %             mBlockTime = datevec(fread(fid, 9, '*char', cMachineFormat{:})','HHMMSSFFF');
             fseek(fid, vFrames(1)*nDim*4, 0);
@@ -134,19 +141,22 @@ if( fid ) && fid ~= -1
     if bInfo
         % show data
         fprintf('\n**************************************************************\n');
-        fprintf(' Feature-File Analysis for %s\n\n', szFilename);
-        fprintf(' Feature dimensions:       %d\n', nDim-2);
-        fprintf(' Start 1st block:          %s\n', datestr(mBlockTime(1,:),'HH:MM:SS.FFF'));
-        fprintf(' Start last block:         %s\n', datestr(mBlockTime(nBlocks,:),'HH:MM:SS.FFF'));
-        fprintf(' Number of sessions:       %i\n', nSessions);
-        fprintf(' Number of blocks:         %i\n', nBlocks);
-        fprintf(' Number of frames/block:   %i\n', vFrames(1));
-        fprintf(' Number of total frames:   %i\n', stInfo.nFrames);
-        fprintf(' Samplingrate:             %i Hz\n', stInfo.fs);
-        fprintf(' Blocksize:                %i Samples / %0.3f s\n', stInfo.BlockSizeInSamples, BlockSizeInSeconds);
-        fprintf(' Framesize:                %i Samples / %0.3f s\n', stInfo.FrameSizeInSamples, stInfo.FrameSizeInSamples / stInfo.fs);
-        fprintf(' Hopsize:                  %i Samples / %0.3f s\n', stInfo.HopSizeInSamples, stInfo.HopSizeInSamples / stInfo.fs);
-        fprintf(' Calibration Values:       %f dB, %f dB\n', stInfo.calibrationInDb(1), stInfo.calibrationInDb(2));
+        fprintf(' Feature-File Analysis for     %s\n\n', szFilename);
+        fprintf(' Feature dimensions:           %d\n', nDim-2);
+        fprintf(' System Time:                  %s\n', datestr(stInfo.SystemTime,'HH:MM:SS.FFF'));
+        fprintf(' Start 1st block:              %s\n', datestr(mBlockTime(1,:),'HH:MM:SS.FFF'));
+        fprintf(' Start last block:             %s\n', datestr(mBlockTime(nBlocks,:),'HH:MM:SS.FFF'));
+        fprintf(' Number of sessions:           %i\n', nSessions);
+        fprintf(' Number of blocks:             %i\n', nBlocks);
+        fprintf(' Number of frames/block:       %i\n', vFrames(1));
+        fprintf(' Number of total frames:       %i\n', stInfo.nFrames);
+        fprintf(' Samplingrate:                 %i Hz\n', stInfo.fs);
+        fprintf(' Blocksize:                    %i Samples / %0.3f s\n', stInfo.BlockSizeInSamples, BlockSizeInSeconds);
+        fprintf(' Framesize:                    %i Samples / %0.3f s\n', stInfo.FrameSizeInSamples, stInfo.FrameSizeInSamples / stInfo.fs);
+        fprintf(' Hopsize:                      %i Samples / %0.3f s\n', stInfo.HopSizeInSamples, stInfo.HopSizeInSamples / stInfo.fs);
+        fprintf(' Calibration Values:           %f dB, %f dB\n', stInfo.calibrationInDb(1), stInfo.calibrationInDb(2));
+        fprintf(' Android ID:                   %s\n', stInfo.AndroidID);
+        fprintf(' Bluetooth Transmitter MAC:    %s\n', stInfo.BluetoothTransmitterMAC);
         fprintf('\n');
         fprintf(' Session information \n\n');
         for iSession = 1:nSessions
@@ -201,6 +211,21 @@ end
 % Byte 57 - Byte 60: Calibration Value in dB, Channel 1 (Float)
 % Byte 61 - Byte 64: Calibration Value in dB, Channel 1 (Float)
 % Byte 65 - EOF    : FEATRUE-DATA
+
+%% Feature Header Protokoll-Version 4
+% Byte  1 - Byte  4: Protokoll Version (Integer)
+% Byte  5 - Byte  8: Block Count (Integer)
+% Byte  9 - Byte 12: Feature Dimensions (Integer)
+% Byte 13 - Byte 16: Block Size (Integer)
+% Byte 17 - Byte 20: Hop Size (Integer)
+% Byte 21 - Byte 24: Samplingrate (Integer)
+% Byte 25 - Byte 40: Sample-Timestamp (YYMMDD_hhmmssSSS)
+% Byte 41 - Byte 56: SystemClock-Timestamp (YYMMDD_hhmmssSSS)
+% Byte 57 - Byte 60: Calibration Value in dB, Channel 1 (Float)
+% Byte 61 - Byte 64: Calibration Value in dB, Channel 1 (Float)
+% Byte 65 - Byte 80: Android ID
+% Byte 81 - Byte 97: Bluetooth Transmitter MAC
+% Byte 98 - EOF    : FEATRUE-DATA
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2005- 2012> J.Bitzer, Sven Fischer

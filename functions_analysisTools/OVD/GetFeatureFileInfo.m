@@ -69,8 +69,8 @@ if( fid ) && fid ~= -1
             stInfo.AndroidID = '';
             stInfo.BluetoothTransmitterMAC = '';
             if ProtokollVersion >= 4
-                stInfo.AndroidID = fread(fid, 16, '*char', cMachineFormat{:})';
-                stInfo.BluetoothTransmitterMAC = fread(fid, 17, '*char', cMachineFormat{:})';
+                stInfo.AndroidID = strtrim(fread(fid, 16, '*char', cMachineFormat{:})');
+                stInfo.BluetoothTransmitterMAC = strtrim(fread(fid, 17, '*char', cMachineFormat{:})');
             end
             stInfo.nBytesHeader = ftell(fid);
             stInfo.ProtokollVersion = ProtokollVersion;

@@ -48,7 +48,7 @@ fid = fopen(szFilename,'w',cMachineFormat);
 stInfo.AndroidID = sprintf('%16s', stInfo.AndroidID);
 stInfo.BluetoothTransmitterMAC = sprintf('%17s', stInfo.BluetoothTransmitterMAC);
 
-fwrite(fid, 4,'int32', 0, cMachineFormat); % protokoll format 2
+fwrite(fid, 4,'int32', 0, cMachineFormat); % protokoll format 4
 fwrite(fid, stInfo.numFrames, 'int32', 0, cMachineFormat);
 fwrite(fid, stInfo.Dims+2, 'int32', 0, cMachineFormat);
 fwrite(fid, stInfo.FrameSizeInSamples, 'int32', 0, cMachineFormat);

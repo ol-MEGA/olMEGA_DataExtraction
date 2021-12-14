@@ -51,6 +51,7 @@ function stSubject = validatesubject(obj, configStruct)
 % Ver. 0.01 initial create (empty) 14-Dec-2017 			 NS
 % Ver. 0.02 first running version 04-Jan-2018 			 NS
 % Ver. 0.03 added config struct 02-Feb-2018 			 NS
+% Ver. 0.04 safety net for missing feature data          UK
 % ---------------------------------------------------------
 
 % Parameters for version check
@@ -92,6 +93,13 @@ if exist(szMatFile, 'file') ~= 2
     if ~exist(corruptTxtFile,'file')
         checkDataIntegrity(obj);
     end
+    % if the file still doesn't exist, there is an error - e.g. no feature files
+    % in presence of a valid log file
+    if ~exist(corruptTxtFile,'file')
+        stSubject = [];
+        return;
+    end
+
     fid = fopen(corruptTxtFile,'r');
     corruptFiles = textscan(fid,'%s\n');
     fclose(fid);

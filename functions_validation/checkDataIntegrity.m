@@ -15,9 +15,11 @@ AllDataEntries = listFiles(szCurrentDir,'*.feat');
 % checks whether files are valid on first glance
 isInValidFile = arrayfun(@(x)(contains(x.name, '._')), AllDataEntries);
 % checks if files are of intermediat "VALIDBLOCKS" format
-isVALIDBLOCKS = arrayfun(@(x)(contains(x.name, 'VTB')), AllDataEntries);
+isVALIDBLOCKS_new = arrayfun(@(x)(contains(x.name, 'VTB')), AllDataEntries);
+% checks if files are of intermediat "VALIDBLOCKS" format
+isVALIDBLOCKS_old = arrayfun(@(x)(contains(x.name, 'VALIDBLOCKS')), AllDataEntries);
 % neither are needed here, so the lists are combined... 
-isInValidFile = logical(sign(isInValidFile + isVALIDBLOCKS));
+isInValidFile = logical(sign(isInValidFile + isVALIDBLOCKS_new + isVALIDBLOCKS_old));
 % and the files discarded from list
 AllDataEntries(isInValidFile) = [];
 

@@ -43,6 +43,8 @@ function [errorCodes, percentErrors] = validatechunk(szChunkName,configStruct)
 % Ver. 0.02 added MSC validation 31-Jan-2018                             NS
 % Ver. 0.03 added config struct 02-Feb-2018                              NS
 % Ver. 0.04 changed MSC to real part of coherence March 2018 			 NS
+% Ver. 0.05 Reaction to missing calibration values in feature files -
+%           needs to be improved but works for now, 21-12-15             UK
 % ---------------------------------------------------------
 
 % Error codes
@@ -55,12 +57,17 @@ errorCodes = [];
 percentErrors = [];
 if contains(szChunkName, 'RMS')
     [RMSFeatData]= LoadFeatureFileDroidAlloc(szChunkName);
+    stInfo = GetFeatureFileInfo(szChunkName);
     
     RMSFeatData = 20*log10(RMSFeatData);
     
-    %
-    fThresholdLoud = configStruct.upperThresholdRMS;
-    fThresholdQuiet = configStruct.lowerThresholdRMS;
+    if stInfo.calibrationInDb == [0, 0]
+        fThresholdLoud = configStruct.upperThresholdRMS - 110;
+        fThresholdQuiet = configStruct.lowerThresholdRMS - 110;
+    else
+        fThresholdLoud = configStruct.upperThresholdRMS;
+        fThresholdQuiet = configStruct.lowerThresholdRMS;
+    end
     
     tooLoudPercent = sum(RMSFeatData(:) > fThresholdLoud) / length(RMSFeatData(:));
     tooQuietPercent = sum(RMSFeatData(:) < fThresholdQuiet) / length(RMSFeatData(:));
@@ -78,6 +85,8 @@ if contains(szChunkName, 'RMS')
         errorCodes(end+1) = isTooQuiet;
         percentErrors(end+1) = tooQuietPercent;
     end
+
+
     if monoPercent > configStruct.errorTolerance
         errorCodes(end+1) = isMono;
         percentErrors(end+1) = monoPercent;

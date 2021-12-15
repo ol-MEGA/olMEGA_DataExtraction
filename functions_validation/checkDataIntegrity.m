@@ -2,6 +2,8 @@
 % J. Bitzer @TGM @ Jade Hochschule
 % V 1.0 May 2017
 % 21-12-02, UK: Some comments added after reported error
+% 21-12-15, UK: Exchanged VALIDBLOCKS for VTB to prevent
+%               mis-classificaation of error blocks
 
 
 function checkDataIntegrity(obj)
@@ -13,7 +15,7 @@ AllDataEntries = listFiles(szCurrentDir,'*.feat');
 % checks whether files are valid on first glance
 isInValidFile = arrayfun(@(x)(contains(x.name, '._')), AllDataEntries);
 % checks if files are of intermediat "VALIDBLOCKS" format
-isVALIDBLOCKS = arrayfun(@(x)(contains(x.name, 'VALIDBLOCKS')), AllDataEntries);
+isVALIDBLOCKS = arrayfun(@(x)(contains(x.name, 'VTB')), AllDataEntries);
 % neither are needed here, so the lists are combined... 
 isInValidFile = logical(sign(isInValidFile + isVALIDBLOCKS));
 % and the files discarded from list

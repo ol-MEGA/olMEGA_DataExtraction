@@ -5,6 +5,9 @@ classdef olMEGA_DataExtraction < handle
     % 21-12-02, UK: - Erasing routine optmised after reported malfunction
     % 21-12-02, UK: - Subject validation improved for cases with valid log
     %                 file, but no feature data
+    % 21-12-15, UK: - Adjusting to new feature version (v4.0), treatment of
+    %                 missing folders in structure improved, better display
+    %                 of experiment time
     
     properties
         
@@ -976,15 +979,18 @@ classdef olMEGA_DataExtraction < handle
             % Check whether necessary content is available
             stDir = dir(sFolder);
             stDir(1:2) = [];
-            vFolders = zeros(2, 1);
+            vFolders = zeros(3, 1);
             for iDir = 1 : length(stDir)
                 if contains(stDir(iDir).name, '_AkuData')
                     vFolders(1) = 1;
                 elseif contains(stDir(iDir).name, '_Quest')
                     vFolders(2) = 1;
+                elseif contains(stDir(iDir).name, 'log')
+                    vFolders(3) = 1;
                 end
             end
-            if mean(vFolders) ~= 1
+
+            if mean(vFolders) == 0
                 errordlg('No user data was found in directory.', 'No data found');
                 return;
             end
@@ -1134,10 +1140,12 @@ classdef olMEGA_DataExtraction < handle
             end
             
             stQuestionnaires = dir(sQuestName);
-            stQuestionnaires(1:2) = [];
+            if ~isempty(stQuestionnaires)
+                stQuestionnaires(1:2) = [];
+            end
             nQuestionnaires = length(stQuestionnaires);
             obj.stAnalysis.NumberOfQuestionnaires = nQuestionnaires;
-            if nQuestionnaires >= 0
+            if nQuestionnaires > 0
                 fprintf('[x] Questionnaire data found.\n');
                 obj.bQuest = 1;
             else
@@ -1147,9 +1155,11 @@ classdef olMEGA_DataExtraction < handle
             % check for feature data
             
             stFeatures = dir([sFolder, filesep, cSubjectData{1}, '_AkuData']);
-            stFeatures(1:2) = [];
+            if ~isempty(stFeatures)
+                stFeatures(1:2) = [];
+            end
             nFeatures = length(stFeatures);
-            if nFeatures >= 0
+            if nFeatures > 0
                 fprintf('[x] Feature data found.\n');
                 obj.bFeatures = 1;
             else
@@ -1247,6 +1257,7 @@ classdef olMEGA_DataExtraction < handle
             
             sQuestName = '_Quest';
             
+            % Check for (Very) old version
             if exist([sFolder, filesep, cSubjectData{1}, '_Mobeval'], 'dir') == 7
                 
                 obj.isHallo = true;
@@ -1268,11 +1279,13 @@ classdef olMEGA_DataExtraction < handle
             end
             
             stQuestionnaires = dir(sQuestName);
-            stQuestionnaires(1:2) = [];
+            if ~isempty(stQuestionnaires)
+                stQuestionnaires(1:2) = [];
+            end
             idxInValid = arrayfun(@(x)(contains(x.name, '._')), stQuestionnaires);
             stQuestionnaires(idxInValid) = [];
             nQuestionnaires = length(stQuestionnaires);
-            if nQuestionnaires >= 0
+            if nQuestionnaires > 0
                 if ~obj.isCommandLine
                     obj.hStat_Quests.Value = num2str(nQuestionnaires);
                     obj.cListQuestionnaire{end+1} = '[x] Questionnaire data found.';
@@ -1285,14 +1298,18 @@ classdef olMEGA_DataExtraction < handle
             if ~obj.isCommandLine
                 obj.hListBox.Value = obj.cListQuestionnaire;
             end
+  
+
             % check for feature data
             
             stFeatures = dir([sFolder, filesep, cSubjectData{1}, '_AkuData']);
-            stFeatures(1:2) = [];
+            if ~isempty(stFeatures)
+                stFeatures(1:2) = [];
+            end
             idxInValid = arrayfun(@(x)(contains(x.name, '._')), stFeatures);
             stFeatures(idxInValid) = [];
             nFeatures = length(stFeatures);
-            if nFeatures >= 0
+            if nFeatures > 0
                 if ~obj.isCommandLine
                     obj.hStat_Features.Value = num2str(nFeatures);
                     obj.cListQuestionnaire{end+1} = '[x] Feature data found.';
@@ -1314,7 +1331,6 @@ classdef olMEGA_DataExtraction < handle
             if obj.bLog && ~obj.isCommandLine
                 obj.extractConnection();
             end
-            
         end
         
         function [] = clearEntries(obj, ~, ~)
@@ -1988,6 +2004,140 @@ classdef olMEGA_DataExtraction < handle
             nTimeMin = min([vTimeBluetooth, vTimeBattery, vTimeState, vTimeDisplay, vTimeVibration]) - nMinTime;
             nTimeMax = max([vTimeBluetooth, vTimeBattery, vTimeState, vTimeDisplay, vTimeVibration]) - nMinTime;
             
+            
+           
+            % Extract and plot feature data
+            
+            configStruct.lowerBinCohe = 1100;
+            configStruct.upperBinCohe = 3000;
+            configStruct.upperThresholdCohe = 0.99;
+            configStruct.upperThresholdRMS = 90; % -6 dB
+            configStruct.lowerThresholdRMS = 2; % -70 dB
+            configStruct.errorTolerance = 0.05; % 5 percent
+            
+            stValidation = validatesubject(obj, configStruct);
+
+            % if there is valid feature data available
+            nFeatureTimeMax = 0;
+
+            if ~isempty(stValidation)
+                
+                load([obj.stSubject.Folder, filesep, obj.stSubject.Name]);
+                
+                % Print Objective Feature Existence and Error Percentage per Feature File
+                mFeatureTime = zeros(ceil(length(stSubject.chunkID.FileName) / 3), 2);
+                
+                nPSD = 0;
+                nRMS = 0;
+                nZCR = 0;
+               
+                for iFile = 1 : 1 : length(stSubject.chunkID.FileName)
+                    
+                    sFeatureFile = stSubject.chunkID.FileName(iFile);
+                    sFeatureFile = sFeatureFile{1};
+                    
+                    if contains(sFeatureFile, 'PSD')
+                        nPSD = nPSD + 1;
+                        
+                        cError = stSubject.chunkID.PercentageError(iFile);
+                        if isnan(sum(cError{:}))
+                            cError = {1};
+                        elseif isempty(cError{:})
+                            cError = {0};
+                        end
+                        
+                        sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
+                        sInfo = GetFeatureFileInfo(sFullFile);
+                        vStartTime =  sInfo.StartTime;
+                        
+                        if (vStartTime(6) < 10)
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
+                        else
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
+                        end
+                        
+                        nTimeIn = stringToTimeMs(sDate) - nMinTime;
+                        nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                        vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+
+                        if nTimeOut > nFeatureTimeMax
+                            nFeatureTimeMax = nTimeOut;
+                        end
+                        
+                        p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
+                        p.LineStyle = 'none';
+                        
+                    elseif contains(sFeatureFile, 'RMS')
+                        nRMS = nRMS + 1;
+                        
+                        cError = stSubject.chunkID.PercentageError(iFile);
+                        if isnan(sum(cError{:}))
+                            cError = {1};
+                        elseif isempty(cError{:})
+                            cError = {0};
+                        end
+                        
+                        sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
+                        sInfo = GetFeatureFileInfo(sFullFile);
+                        vStartTime =  sInfo.StartTime;
+                        
+                        if (vStartTime(6) < 10)
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
+                        else
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
+                        end
+                        
+                        nTimeIn = stringToTimeMs(sDate) - nMinTime;
+                        nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                        vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+
+                        if nTimeOut > nFeatureTimeMax
+                            nFeatureTimeMax = nTimeOut;
+                        end
+                        
+                        p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
+                        p.LineStyle = 'none';
+    
+                    elseif contains(sFeatureFile, 'ZCR')
+                        nZCR = nZCR + 1;
+                        
+                        cError = stSubject.chunkID.PercentageError(iFile);
+                        if isnan(sum(cError{:}))
+                            cError = {1};
+                        elseif isempty(cError{:})
+                            cError = {0};
+                        end
+                        
+                        sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
+                        sInfo = GetFeatureFileInfo(sFullFile);
+                        vStartTime =  sInfo.StartTime;
+                        
+                        if (vStartTime(6) < 10)
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
+                        else
+                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
+                        end
+                        
+                        nTimeIn = stringToTimeMs(sDate) - nMinTime;
+                        nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                        vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+
+                        if nTimeOut > nFeatureTimeMax
+                            nFeatureTimeMax = nTimeOut;
+                        end
+                        
+                        p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
+                        p.LineStyle = 'none';
+    
+                    end
+                end
+            end
+
+
+            if nFeatureTimeMax > nTimeMax
+                nTimeMax = nFeatureTimeMax;
+            end
+
             vTimeState = vTimeState - nMinTime;
             vTimeState(end+1) = nTimeMax;
             
@@ -2049,119 +2199,14 @@ classdef olMEGA_DataExtraction < handle
                 end
                 
             end
-           
-            % Extract and plot feature data
-            
-            configStruct.lowerBinCohe = 1100;
-            configStruct.upperBinCohe = 3000;
-            configStruct.upperThresholdCohe = 0.99;
-            configStruct.upperThresholdRMS = 90; % -6 dB
-            configStruct.lowerThresholdRMS = 2; % -70 dB
-            configStruct.errorTolerance = 0.05; % 5 percent
-            
-            stValidation = validatesubject(obj, configStruct);
 
-            % if there is valid feature data available
-            if ~isempty(stValidation)
-                
-                load([obj.stSubject.Folder, filesep, obj.stSubject.Name]);
-                
-                % Print Objective Feature Existence and Error Percentage per Feature File
-                mFeatureTime = zeros(ceil(length(stSubject.chunkID.FileName) / 3), 2);
-                
-                nPSD = 0;
-                nRMS = 0;
-                nZCR = 0;
-               
-                for iFile = 1 : 1 : length(stSubject.chunkID.FileName)
-                    
-                    sFeatureFile = stSubject.chunkID.FileName(iFile);
-                    sFeatureFile = sFeatureFile{1};
-                    
-                    if contains(sFeatureFile, 'PSD')
-                        nPSD = nPSD + 1;
-                        
-                        cError = stSubject.chunkID.PercentageError(iFile);
-                        if isnan(sum(cError{:}))
-                            cError = {1};
-                        elseif isempty(cError{:})
-                            cError = {0};
-                        end
-                        
-                        sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
-                        sInfo = GetFeatureFileInfo(sFullFile);
-                        vStartTime =  sInfo.StartTime;
-                        
-                        if (vStartTime(6) < 10)
-                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
-                        else
-                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
-                        end
-                        
-                        nTimeIn = stringToTimeMs(sDate) - nMinTime;
-                        nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
-                        vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
-                        
-                        p = patch(obj.hAxes, vX, [0.2, 0.3, 0.3, 0.2], (1 - mean(cError{:})) * [1, 0, 0]);
-                        p.LineStyle = 'none';
-                        
-                    elseif contains(sFeatureFile, 'RMS')
-                        nRMS = nRMS + 1;
-                        
-                        cError = stSubject.chunkID.PercentageError(iFile);
-                        if isnan(sum(cError{:}))
-                            cError = {1};
-                        elseif isempty(cError{:})
-                            cError = {0};
-                        end
-                        
-                        sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
-                        sInfo = GetFeatureFileInfo(sFullFile);
-                        vStartTime =  sInfo.StartTime;
-                        
-                        if (vStartTime(6) < 10)
-                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
-                        else
-                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
-                        end
-                        
-                        nTimeIn = stringToTimeMs(sDate) - nMinTime;
-                        nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
-                        vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
-                        
-                        p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
-                        p.LineStyle = 'none';
-    
-                    elseif contains(sFeatureFile, 'ZCR')
-                        nZCR = nZCR + 1;
-                        
-                        cError = stSubject.chunkID.PercentageError(iFile);
-                        if isnan(sum(cError{:}))
-                            cError = {1};
-                        elseif isempty(cError{:})
-                            cError = {0};
-                        end
-                        
-                        sFullFile = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData', filesep, sFeatureFile];
-                        sInfo = GetFeatureFileInfo(sFullFile);
-                        vStartTime =  sInfo.StartTime;
-                        
-                        if (vStartTime(6) < 10)
-                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:0%.3f', vStartTime(1:5), vStartTime(6));
-                        else
-                            sDate = sprintf('%4d-%2d-%2d %2d:%2d:%.3f', vStartTime(1:5), vStartTime(6));
-                        end
-                        
-                        nTimeIn = stringToTimeMs(sDate) - nMinTime;
-                        nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
-                        vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
-                        
-                        p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
-                        p.LineStyle = 'none';
-    
-                    end
-                end
-            end
+
+
+
+
+
+
+
            
             % Obtain questionnaire data
             if obj.isHallo

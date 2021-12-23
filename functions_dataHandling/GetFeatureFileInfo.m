@@ -7,7 +7,7 @@
 %   output:
 %       stInfo              parameter and metadata
 %
-% Auth: Sven Fischer, Joerg Bitzer, Sven Franz
+% Auth: Sven Fischer, Joerg BitzervFrames, Sven Franz
 % Vers: v0.20
 % Vers v0.3 JB, Vise deleted and new stInfo introduced
 % v0.4 SK, force big endian for java compatability
@@ -152,7 +152,7 @@ if( fid ) && fid ~= -1
         fprintf(' Number of total frames:       %i\n', stInfo.nFrames);
         fprintf(' Samplingrate:                 %i Hz\n', stInfo.fs);
         fprintf(' Blocksize:                    %i Samples / %0.3f s\n', stInfo.BlockSizeInSamples, BlockSizeInSeconds);
-        fprintf(' Framesize:                    %i Samples / %0.3f s\n', stInfo.FrameSizeInSamples, stInfo.FrameSizeInSamples / stInfo.fs);
+        fprintf(' Framesize:                    %i Samples / %0.3f s\n', stInfo, stInfo.FrameSizeInSamples / stInfo.fs);
         fprintf(' Hopsize:                      %i Samples / %0.3f s\n', stInfo.HopSizeInSamples, stInfo.HopSizeInSamples / stInfo.fs);
         fprintf(' Calibration Values:           %f dB, %f dB\n', stInfo.calibrationInDb(1), stInfo.calibrationInDb(2));
         fprintf(' Android ID:                   %s\n', stInfo.AndroidID);
@@ -184,8 +184,8 @@ end
 % Byte  9 - Byte 12: Block Size (Integer)
 % Byte 13 - Byte 16: Hop Size (Integer)
 % Byte 17 - Byte 20: Samplingrate (Integer)
-% Byte 21 - Byte 24: Timestamp (YYMMDD_hhmmssSSS)
-% Byte 25 - EOF    : FEATRUE-DATA
+% Byte 21 - Byte 36: Timestamp (YYMMDD_hhmmssSSS)
+% Byte 37 - EOF    : FEATRUE-DATA
 % 
 %% Feature Header Protokoll-Version 2
 % Byte  1 - Byte  4: Protokoll Version (Integer)

@@ -1,6 +1,6 @@
 
-function saveDroidFeatureFile (szFilename, stInfo, Data)
-% function saveDroidFeatureFile (suFiename, stInfo, Data)
+function saveDroidFeatureFile (szFilename, stInfo, Data, TimeVek)
+% function saveDroidFeatureFile (suFiename, stInfo, Data, mFrameTime)
 % stData struct which must contain the following information
 %   stInfo.fs : = the sampling rate of the original audiodata
 %   stInfo.HopSizeInSamples := the hopsize of the feature 
@@ -16,6 +16,8 @@ function saveDroidFeatureFile (szFilename, stInfo, Data)
 %   adding Feature Header Format v4
 %   change struct field names to stInfo from GetFeatureFileInfo()
 %   preserve backward compatibility
+% v0.3 SF: 
+%   add TimeVek as optional parameter
 
 cMachineFormat = 'b';
 [stInfo.numFrames, stInfo.Dims] = size(Data);
@@ -39,9 +41,10 @@ if ~isfield(stInfo, 'BluetoothTransmitterMAC')
     stInfo.BluetoothTransmitterMAC = '';
 end
 
-
-TimeVek(:,1) = 0:stInfo.HopSizeInSamples/stInfo.fs:stInfo.numFrames*stInfo.HopSizeInSamples/stInfo.fs - stInfo.HopSizeInSamples/stInfo.fs;
-TimeVek(:,2) = TimeVek(:,1) + stInfo.FrameSizeInSamples/stInfo.fs;
+if nargin < 4
+    TimeVek(:,1) = 0:stInfo.HopSizeInSamples/stInfo.fs:stInfo.numFrames*stInfo.HopSizeInSamples/stInfo.fs - stInfo.HopSizeInSamples/stInfo.fs;
+    TimeVek(:,2) = TimeVek(:,1) + stInfo.FrameSizeInSamples/stInfo.fs;
+end
 
 fid = fopen(szFilename,'w',cMachineFormat);
 

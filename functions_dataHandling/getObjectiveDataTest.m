@@ -3,24 +3,23 @@
 % Author: J. Pohlhausen (c) IHA @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create 26-Sep-2019 	JP
+% Ver. 0.02 adaptation to new data structure 24-Jan-2022 UK
 
 % clear;
 close all;
 
-% path to data folder (needs to be customized)
-% szBaseDir = '/Volumes/Samsung_T5/IHAB_1_EMA2018/IHAB_Rohdaten_EMA2018';
-szBaseDir = 'I:\IHAB_2_EMA2018\IHAB_Rohdaten_EMA2018';
+% path to data folder (needs to be customized, i.e. 'C:/User/Name/Subject')
+% use single quotation marks
+szBaseDir = '/Directory/Containing/AB12CD34_212121_ef';
 
 % get all subject directories
 subjectDirectories = dir(szBaseDir);
 
-% get one subject directoy
-szCurrentFolder = subjectDirectories(10).name;
-
 % get object
-[obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
+[obj] = olMEGA_DataExtraction([szBaseDir]);
 
-szFeature = 'PSD';
+% Specify the feature you would like to extract
+szFeature = 'RMS';
 
 % define figure width full screen in pixels
 stRoots = get(0);
@@ -28,18 +27,19 @@ stRoots = get(0);
 % get plot width
 iPlotWidth = stRoots.ScreenSize(3);
 
+[Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
+    'startDay','first', 'endDay', 'last');
+
 % [Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
-%     'startDay','first','ENdDay','last', ...
+%     'startDay','first','endDay','last', ...
 %     'StartTime',duration(8,0,0),'EndTime',duration(13,0,0), ...
 %     'PlotWidth',iPlotWidth);
 
-[Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
-    'startDay','first', 'ENdDay', 'last', ...
-    'PlotWidth',iPlotWidth);
-
 % [Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
-%     'StartTime',22,'EndTime',23);
+%     'startDay','first', 'endDay', 'last', ...
+%     'PlotWidth',iPlotWidth);
 
+fprintf('Feature extraction complete.\n');
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen

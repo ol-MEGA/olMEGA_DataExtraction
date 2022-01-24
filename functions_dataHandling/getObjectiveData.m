@@ -61,6 +61,7 @@ function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
 % Ver. 0.01 initial create (empty) 15-May-2017  Initials JB
 % Ver. 1.0 object-based version, new input 26-Sept-2019 JP
 % Ver. 1.1 added correction of frame time 21-Jun-2021 JP
+% Ver. 1.2 adaptation to new naming scheme, line 252 represents old one UK
 
 % preallocate output parameters
 Data = [];
@@ -248,7 +249,8 @@ if isFileBased
         % find files with wrong blocktime and correct it
         dBlockDay = datetime(stFileInfo.mBlockTime(1:3));
         if dBlockDay ~= stInfo.StartDay
-            mFrameTime = datetime(szFileName(12:29), 'InputFormat', 'yyyyMMdd_HHmmssSSS') + seconds(stFileInfo.mFrameTime_rel(:, 1));
+%             mFrameTime = datetime(szFileName(12:29), 'InputFormat', 'yyyyMMdd_HHmmssSSS') + seconds(stFileInfo.mFrameTime_rel(:, 1));
+            mFrameTime = datetime(szFileName(5:22), 'InputFormat', 'yyyyMMdd_HHmmssSSS') + seconds(stFileInfo.mFrameTime_rel(:, 1));
             mFrameTime = datenum(mFrameTime);
         end
         

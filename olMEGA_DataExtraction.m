@@ -226,7 +226,7 @@ classdef olMEGA_DataExtraction < handle
         function [obj] = olMEGA_DataExtraction(varargin)
             
             addpath(genpath(pwd));
-            rmpath('legacy');
+%             rmpath('legacy');
             rmpath('.git');
             
             
@@ -547,7 +547,7 @@ classdef olMEGA_DataExtraction < handle
                 obj.nDivision_Vertical + 44+4,...
                 obj.nButtonWidth, obj.nButtonHeight];
             obj.hButton_Analyse.Text = obj.sLabel_Button_Analyse;
-            obj.hButton_Analyse.Enable = 'Off';
+            obj.hButton_Analyse.Enable = 'On';
             obj.hButton_Analyse.ButtonPushedFcn = @obj.callbackAnalyseData;
             obj.hButton_Analyse.Visible = 'Off';
             
@@ -1324,7 +1324,7 @@ classdef olMEGA_DataExtraction < handle
             end
             
             if obj.isDataCompleteEnoughForAnalysis() && ~obj.isCommandLine
-                %                 obj.hButton_Analyse.Enable = 'On';
+                                obj.hButton_Analyse.Enable = 'On';
                 %                 obj.hButton_Compare.Enable = 'On';
             end
             
@@ -1505,12 +1505,16 @@ classdef olMEGA_DataExtraction < handle
             obj.hLabel_Calculating.Visible = 'On';
             
             [~, sVersion] = system("adb shell getprop ro.build.version.release");
-            obj.nMobileVersion = str2double(sVersion);
+            splitVersion = split(sVersion, '.');
+            mainVersion = str2double(splitVersion{1});
+            obj.nMobileVersion = mainVersion;
             if obj.nMobileVersion <= 10
                 obj.sMobileDir = 'sdcard/olMEGA';
             else
                 obj.sMobileDir = 'sdcard/Android/data/com.iha.olmega_mobilesoftware_v2/files';
             end
+
+         
             
             vStatus = [];
             
@@ -1692,7 +1696,9 @@ classdef olMEGA_DataExtraction < handle
             
             
             [~, sVersion] = system("adb shell getprop ro.build.version.release");
-            obj.nMobileVersion = str2double(sVersion);
+            splitVersion = split(sVersion, '.');
+            mainVersion = str2double(splitVersion{1});
+            obj.nMobileVersion = mainVersion;
             if obj.nMobileVersion <= 10
                 obj.sMobileDir = 'sdcard/olMEGA';
             else
@@ -2058,6 +2064,14 @@ classdef olMEGA_DataExtraction < handle
                         
                         nTimeIn = stringToTimeMs(sDate) - nMinTime;
                         nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                        
+                        % Safety net to tackle strangely high values coming
+                        % from feature files
+                        if (nTimeOut - nTimeIn) > 10^5
+                            fprintf('%s: time data seems corrupt - assuming standard length.\n', sFeatureFile)
+                            nTimeOut = nTimeIn + 60 * 1000;
+                        end
+                        
                         vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
 
                         if nTimeOut > nFeatureTimeMax
@@ -2089,11 +2103,20 @@ classdef olMEGA_DataExtraction < handle
                         
                         nTimeIn = stringToTimeMs(sDate) - nMinTime;
                         nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                        
+                        % Safety net to tackle strangely high values coming
+                        % from feature files
+                        if (nTimeOut - nTimeIn) > 10^5
+                            fprintf('%s: time data seems corrupt - assuming standard length.\n', sFeatureFile)
+                            nTimeOut = nTimeIn + 60 * 1000;
+                        end
+                        
                         vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
 
                         if nTimeOut > nFeatureTimeMax
                             nFeatureTimeMax = nTimeOut;
                         end
+                        
                         
                         p = patch(obj.hAxes, vX, [0.1, 0.2, 0.2, 0.1] , (1 - mean(cError{:})) * [0, 1, 0]);
                         p.LineStyle = 'none';
@@ -2120,12 +2143,21 @@ classdef olMEGA_DataExtraction < handle
                         
                         nTimeIn = stringToTimeMs(sDate) - nMinTime;
                         nTimeOut = nTimeIn + (sInfo.HopSizeInSamples * (sInfo.nFrames - 1) + sInfo.FrameSizeInSamples) / sInfo.fs * 1000;
+                        
+                        % Safety net to tackle strangely high values coming
+                        % from feature files
+                        if (nTimeOut - nTimeIn) > 10^5
+                            fprintf('%s: time data seems corrupt - assuming standard length.\n', sFeatureFile)
+                            nTimeOut = nTimeIn + 60 * 1000;
+                        end
+                        
                         vX = [nTimeIn, nTimeIn, nTimeOut, nTimeOut];
+                        
 
                         if nTimeOut > nFeatureTimeMax
                             nFeatureTimeMax = nTimeOut;
                         end
-                        
+            
                         p = patch(obj.hAxes, vX, [0, 0.1, 0.1, 0] , (1 - mean(cError{:})) * [0, 0, 1]);
                         p.LineStyle = 'none';
     
@@ -2304,11 +2336,11 @@ classdef olMEGA_DataExtraction < handle
             obj.hText_PSD = text(obj.hAxes, obj.hAxes.XLim(2) * 0.01, 0.25, 'PSD');
             obj.hText_RMS = text(obj.hAxes, obj.hAxes.XLim(2) * 0.01, 0.15, 'RMS');
             obj.hText_ZCR = text(obj.hAxes, obj.hAxes.XLim(2) * 0.01, 0.05, 'ZCR');
-            obj.hText_Quest.BackgroundColor = [0.9, 0.9, 0.9];
-            obj.hText_Display.BackgroundColor = [0.9, 0.9, 0.9];
-            obj.hText_PSD.BackgroundColor = [0.9, 0.9, 0.9];
-            obj.hText_RMS.BackgroundColor = [0.9, 0.9, 0.9];
-            obj.hText_ZCR.BackgroundColor = [0.9, 0.9, 0.9];
+%             obj.hText_Quest.BackgroundColor = [0.9, 0.9, 0.9];
+%             obj.hText_Display.BackgroundColor = [0.9, 0.9, 0.9];
+%             obj.hText_PSD.BackgroundColor = [0.9, 0.9, 0.9];
+%             obj.hText_RMS.BackgroundColor = [0.9, 0.9, 0.9];
+%             obj.hText_ZCR.BackgroundColor = [0.9, 0.9, 0.9];
             obj.hText_Quest.Margin = 0.1;
             obj.hText_Display.Margin = 0.1;
             obj.hText_PSD.Margin = 0.1;
@@ -2378,12 +2410,11 @@ classdef olMEGA_DataExtraction < handle
             hFid = fopen(['preferences', filesep, obj.sFileName_Preferences]);
             cTemp = textscan(hFid, '%s%f');
             
-            %             obj.stPreferences.MinPartLength = cTemp{2}(1);
-            
             if cTemp{2}(1) == -1
                 obj.bIncludeObjectiveData = false;
                 obj.hButton_MinPartLength.Text = 'n/a';
             else
+                obj.stPreferences.MinPartLength = cTemp{2}(1);
                 obj.bIncludeObjectiveData = true;
                 obj.hButton_MinPartLength.Text = ...
                     num2str(obj.stPreferences.MinPartLength);

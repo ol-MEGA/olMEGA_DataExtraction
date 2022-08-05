@@ -246,9 +246,11 @@ if isFileBased
         % load data from feature file
         [FeatData, mFrameTime, stFileInfo] = LoadFeatureFileDroidAlloc([szDir filesep szFileName]);
         
+        %THIS IS A PROBLEM!
+        
         % find files with wrong blocktime and correct it
         dBlockDay = datetime(stFileInfo.mBlockTime(1:3));
-        if dBlockDay ~= stInfo.StartDay
+        if dBlockDay ~= stInfo.StartDay 
 %             mFrameTime = datetime(szFileName(12:29), 'InputFormat', 'yyyyMMdd_HHmmssSSS') + seconds(stFileInfo.mFrameTime_rel(:, 1));
             mFrameTime = datetime(szFileName(5:22), 'InputFormat', 'yyyyMMdd_HHmmssSSS') + seconds(stFileInfo.mFrameTime_rel(:, 1));
             mFrameTime = datenum(mFrameTime);

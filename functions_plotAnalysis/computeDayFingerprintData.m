@@ -54,8 +54,10 @@ if isDebugMode
     load DataMat
 else
     szFeature = 'RMS';
-    [DataRMS, timeVecRMS, ~] = getObjectiveDataOneDay(fileparts(obj.stSubject.Folder), obj.stSubject.Code, desiredDay, szFeature, desiredPart);
-    
+%     [DataRMS, timeVecRMS, ~] = getObjectiveDataOneDay(fileparts(obj.stSubject.Folder), obj.stSubject.Code, desiredDay, szFeature, desiredPart);
+        [DataRMS, timeVecRMS, ~] = getObjectiveData(obj, szFeature, 'startDay', desiredDay, 'endDay', desiredDay);
+
+
     if ~isempty(timeVecRMS)
         % No Inclusion of Parts shorter than e.g. 10 Minutes % UK
         temp_time = timeVecRMS(end) - timeVecRMS(1);
@@ -66,7 +68,7 @@ else
     end
     
     szFeature = 'PSD';
-    [DataPSD, timeVecPSD, ~] = getObjectiveDataOneDay(fileparts(obj.stSubject.Folder), obj.stSubject.Code, desiredDay, szFeature, desiredPart);
+    [DataPSD, timeVecPSD, ~] = getObjectiveData(obj, szFeature, 'startDay', desiredDay, 'endDay', desiredDay);
     %    save DataMat DataRMS timeVecRMS DataPSD timeVecPSD NrOfParts
 end
 
@@ -81,13 +83,13 @@ if isempty(Cohe)
 end
 % OVD
 stInfoOVDAlgo.fs = 16000;
-[OVD_result_fixed, MeanCohere,~] = computeOVD_Coh(Cohe, timeVecPSD, stInfoOVDAlgo);
+% [OVD_result_fixed, MeanCohere,~] = computeOVD_Coh(Cohe, timeVecPSD, stInfoOVDAlgo);
 
 % OVD adaptive
 stInfoOVDAlgo.fs = 16000;
 stInfoOVDAlgo.adapThresh = 0.5;
 stInfoOVDAlgo.additive = p.Results.additive;
-OVD_result_adaptive = computeOVD_Coh(Cohe, timeVecPSD, stInfoOVDAlgo);
+% OVD_result_adaptive = computeOVD_Coh(Cohe, timeVecPSD, stInfoOVDAlgo);
 
 % prepare display by getting the right datetime vector for the data
 
@@ -105,7 +107,7 @@ stControl.szTimeCompressionMode = 'mean';
 
 [FinalDataRMS,FinaltimeVecRMS] = DataCompactor(DataRMS, timeVecRMS, stControl);
 clear DataRMS;
-[FinalDataPxx, ~] = DataCompactor(Pxx, timeVecPSD, stControl);
+[FinalDataPxx, FinaltimeVecPSD] = DataCompactor(Pxx, timeVecPSD, stControl);
 [FinalDataPyy, ~] = DataCompactor(Pyy, timeVecPSD, stControl);
 clear Pyy;
 [FinalDataCohe, ~] = DataCompactor(real(Cohe), timeVecPSD, stControl);
@@ -113,13 +115,15 @@ clear Cohe;
 [FinalDataCxy, ~] = DataCompactor(abs(Cxy), timeVecPSD, stControl);
 clear Cxy;
 
-stControlOVD.DataPointRepresentation_s = stControl.DataPointRepresentation_s;
-stControlOVD.DataPointOverlap_percent = 0;
-stControlOVD.szTimeCompressionMode = 'max';
-[FinalDataOVD_fixed, ~] = DataCompactor(OVD_result_fixed, timeVecPSD, stControlOVD);
-[FinalDataOVD_adaptive, ~] = DataCompactor(OVD_result_adaptive, timeVecPSD, stControlOVD);
-clear OVD_result;
-[FinalDataMeanCohe, FinaltimeVecPSD] = DataCompactor(MeanCohere, timeVecPSD, stControlOVD);
+% stControlOVD.DataPointRepresentation_s = stControl.DataPointRepresentation_s;
+% stControlOVD.DataPointOverlap_percent = 0;
+% stControlOVD.szTimeCompressionMode = 'max';
+% [FinalDataOVD_fixed, ~] = DataCompactor(OVD_result_fixed, timeVecPSD, stControlOVD);
+% [FinalDataOVD_adaptive, ~] = DataCompactor(OVD_result_adaptive, timeVecPSD, stControlOVD);
+% clear OVD_result;
+% [FinalDataMeanCohe, FinaltimeVecPSD] = DataCompactor(MeanCohere, timeVecPSD, stControlOVD);
+
+FinaltimeVecPSD = FinaltimeVecRMS;
 
 % Data reduction and condensing
 % FFTSize x Band Matrix aufbauen
@@ -145,8 +149,8 @@ save ([obj.stSubject.Folder, filesep, 'cache', filesep obj.stSubject.Name,...
     '_p', num2str(desiredPart)], 'FinalDataRMS', 'FinaltimeVecRMS',...
     'FinalDataPxx', 'FinalDataPyy', 'FinalDataCohe', 'FinalDataCxy', ...
     'FinalDataPxx2', 'FinalDataPyy2', 'FinalDataCohe2', 'FinalDataCxy2', ...
-    'FinalDataOVD_fixed', 'FinalDataOVD_adaptive', 'FinalDataMeanCohe',...
-    'FinaltimeVecPSD', 'stBandDef', 'stInfoOVDAlgo');
+    'FinaltimeVecPSD', ...
+    'stBandDef', 'stInfoOVDAlgo');
 
 
 end

@@ -36,17 +36,8 @@ function [ mFeatureData, mFrameTime, stInfo ] = LoadFeatureFileDroidAlloc( szFil
 
 cMachineFormat = {0, 'b'};
 
-
-
 % Get information about feature file for preallocation
 stInfo = GetFeatureFileInfo(szFilename, 0);
-
-if (stInfo.nFrames>60*stInfo.fs)
-    mFeatureData = [];
-    mFrameTime = [];
-    warning('feature file %s is corrupt',szFilename);
-    return;
-end
 
 % Try to open the specified file for Binary Reading.
 fid = fopen( szFilename, 'rb' );

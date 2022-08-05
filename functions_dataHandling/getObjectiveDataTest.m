@@ -10,7 +10,7 @@ close all;
 
 % path to data folder (needs to be customized, i.e. 'C:/User/Name/Subject')
 % use single quotation marks
-szBaseDir = '/Directory/Containing/AB12CD34_212121_ef';
+szBaseDir = 'D:\olMEGA_TestData\Linköping\AE210070_220804_uk';
 
 % get all subject directories
 subjectDirectories = dir(szBaseDir);
@@ -18,8 +18,8 @@ subjectDirectories = dir(szBaseDir);
 % get object
 [obj] = olMEGA_DataExtraction([szBaseDir]);
 
-% Specify the feature you would like to extract
-szFeature = 'RMS';
+% Specify the feature you would like to extract [PSD, RMS, ZCR]
+szFeature = 'ZCR';
 
 % define figure width full screen in pixels
 stRoots = get(0);
@@ -27,17 +27,37 @@ stRoots = get(0);
 % get plot width
 iPlotWidth = stRoots.ScreenSize(3);
 
-[Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
-    'startDay','first', 'endDay', 'last');
+% [Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
+%     'startDay','first', 'endDay', 'last');
 
 % [Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
 %     'startDay','first','endDay','last', ...
 %     'StartTime',duration(8,0,0),'EndTime',duration(13,0,0), ...
 %     'PlotWidth',iPlotWidth);
 
-% [Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
-%     'startDay','first', 'endDay', 'last', ...
-%     'PlotWidth',iPlotWidth);
+[Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
+    'startDay','first', 'endDay', 'last', ...
+    'PlotWidth',iPlotWidth);
+
+if strcmp(szFeature, 'PSD')
+    imagesc(10*log10(abs(flipud(Data'))));
+    title(sprintf('PSD/CPSD between %s and %s', TimeVec(1), TimeVec(end)));
+    colorbar;
+elseif strcmp(szFeature, 'RMS')
+    plot(TimeVec, 10*log10(Data));
+    axis tight;
+    ylabel('RMS level [dB]');
+    legend({'Left', 'Right'})
+    title(sprintf('RMS level (uncalibrated) between %s and %s', TimeVec(1), TimeVec(end)))
+elseif strcmp(szFeature, 'ZCR')
+    plot(TimeVec, Data);
+    ylabel('Zero-crossing rate [1/s]');
+    axis tight;
+    legend({'Left', '\Delta Left', 'Right', '\Delta Right'})
+    title(sprintf('ZCR between %s and %s', TimeVec(1), TimeVec(end)))
+end
+
+disp(stInfo);
 
 fprintf('Feature extraction complete.\n');
 

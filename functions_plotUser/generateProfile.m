@@ -4,7 +4,7 @@ function generateProfile(obj)
     %
     % GUI IMPLEMENTATION UK
     %
-    % Parameters
+    % ParametersplotAllDayFingerprints
     % ----------
     % szSubjectID : string
     %	subject ID
@@ -49,17 +49,18 @@ function generateProfile(obj)
                 
                 % Get all available parts for each day and each subject
                 % To do this, set desiredPart variable to zero (last variable)
-                [~, ~, iNrOfParts] = getObjectiveDataOneDay(fileparts(obj.stSubject.Folder), obj.stSubject.Code, dateDay, szFeature,0);
+%                 [~, ~, iNrOfParts] = getObjectiveDataOneDay(fileparts(obj.stSubject.Folder), obj.stSubject.Code, dateDay, szFeature,0);
+%                 [~, ~, iNrOfParts] = getObjectiveData(obj, szFeature, 'startDay', dateDay, 'endDay', dateDay);
                 
                 % Loop over all parts of one day for one subject
-                for jj = 1:iNrOfParts
+                for jj = 1:1
                    
                     hProgress.stopTimer();
-                    obj.cListQuestionnaire{end} = sprintf('\t.generating fingerprint of day %d, part %d of %d -', nDate, jj, iNrOfParts);
+                    obj.cListQuestionnaire{end} = sprintf('\t.generating fingerprint of day %d, part %d of %d -', nDate, jj, 1);
                     obj.hListBox.Value = obj.cListQuestionnaire;
                     hProgress = BlindProgress(obj);
                     
-                    computeDayFingerprintData(obj, dateDay, jj, 0);
+                    computeDayFingerprintData(obj, dateDay, 1, 0);
                     
                     if ~exist([obj.stSubject.Folder filesep 'graphics', filesep, ...
                             'Fingerprint_', obj.stSubject.Name, ...

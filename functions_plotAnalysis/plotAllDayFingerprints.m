@@ -272,40 +272,40 @@ clear FinalDataRMS;
 
 
 %% OVD
-axOVD = axes('Position',[GUI_xStart 0.75  PosVecCoher(3) 0.1]);
-hOVD = plot(datenum(FinaltimeVecPSD),FinalDataMeanCohe);
-axOVD.YLabel = ylabel('mean real coh.');
-clear FinalDataMeanCohe;
-
-hOVD.Color = [0 0 0];
-hold on;
-idx_fixedThresh = find(FinalDataOVD_fixed>0.5);
-idx_adaptThresh = find(FinalDataOVD_adaptive ~= false);
-
-
-if ~isempty(idx_fixedThresh)
-    hOVDMarker_fixed = plot(datenum(FinaltimeVecPSD(idx_fixedThresh)),FinalDataOVD_fixed(idx_fixedThresh).* 1.25);
-else
-    hOVDMarker_fixed = plot(NaN,NaN);
-end
-if ~isempty(idx_adaptThresh)
-    hOVDMarker_adaptive = plot(datenum(FinaltimeVecPSD(idx_adaptThresh)),FinalDataOVD_adaptive(idx_adaptThresh).* 1.1);
-else
-    hOVDMarker_adaptive = plot(NaN,NaN);
-end
-xlim([datenum(FinaltimeVecPSD(1)) datenum(FinaltimeVecPSD(end))]);
-ylim ([-0.5 1.5]);
-axOVD.YTick = [-0.5 0 0.5 1];
-axOVD.YTickLabels = {'-0.5','0', '0.5', '1'};
-
-% Mark own voice segments
-hOVDMarker_fixed.LineStyle = 'none';
-hOVDMarker_fixed.Marker = 'x';
-hOVDMarker_fixed.Color = [1 0 0];
-hOVDMarker_adaptive.LineStyle = 'none';
-hOVDMarker_adaptive.Marker = 'x';
-hOVDMarker_adaptive.Color = [143, 16, 163]./255;
-clear FinalDataOVD;
+% axOVD = axes('Position',[GUI_xStart 0.75  PosVecCoher(3) 0.1]);
+% hOVD = plot(datenum(FinaltimeVecPSD),FinalDataMeanCohe);
+% axOVD.YLabel = ylabel('mean real coh.');
+% clear FinalDataMeanCohe;
+% 
+% hOVD.Color = [0 0 0];
+% hold on;
+% idx_fixedThresh = find(FinalDataOVD_fixed>0.5);
+% idx_adaptThresh = find(FinalDataOVD_adaptive ~= false);
+% 
+% 
+% if ~isempty(idx_fixedThresh)
+%     hOVDMarker_fixed = plot(datenum(FinaltimeVecPSD(idx_fixedThresh)),FinalDataOVD_fixed(idx_fixedThresh).* 1.25);
+% else
+%     hOVDMarker_fixed = plot(NaN,NaN);
+% end
+% if ~isempty(idx_adaptThresh)
+%     hOVDMarker_adaptive = plot(datenum(FinaltimeVecPSD(idx_adaptThresh)),FinalDataOVD_adaptive(idx_adaptThresh).* 1.1);
+% else
+%     hOVDMarker_adaptive = plot(NaN,NaN);
+% end
+% xlim([datenum(FinaltimeVecPSD(1)) datenum(FinaltimeVecPSD(end))]);
+% ylim ([-0.5 1.5]);
+% axOVD.YTick = [-0.5 0 0.5 1];
+% axOVD.YTickLabels = {'-0.5','0', '0.5', '1'};
+% 
+% % Mark own voice segments
+% hOVDMarker_fixed.LineStyle = 'none';
+% hOVDMarker_fixed.Marker = 'x';
+% hOVDMarker_fixed.Color = [1 0 0];
+% hOVDMarker_adaptive.LineStyle = 'none';
+% hOVDMarker_adaptive.Marker = 'x';
+% hOVDMarker_adaptive.Color = [143, 16, 163]./255;
+% clear FinalDataOVD;
 
 %% Pxx
 axPxx = axes('Position',[GUI_xStart 0.2 GUI_xAxesWidth 0.18]);
@@ -351,8 +351,8 @@ end
 
 
 XTickLabels = cellstr(datestr(XTicksTime,'HH:MM'));
-set(axOVD,'XTick',XTicksTime);
-set(axOVD,'XTickLabel','');
+% set(axOVD,'XTick',XTicksTime);
+% set(axOVD,'XTickLabel','');
 set(axRMS,'XTick',XTicksTime);
 set(axRMS,'XTickLabel', XTickLabels,'XTickLabelRotation',30)
 
@@ -537,15 +537,15 @@ end
 xlim([datenum(FinaltimeVecPSD(1)) datenum(FinaltimeVecPSD(end))]);
 clear FinaltimeVecPSD;
 set(gcf,'PaperPositionMode', 'auto');
-if hasSubjectiveData && ~isempty(FinalTimeQ)
-    %set(axQ,'YTick',[]);
-    set(axQ,'XTick',XTicksTime);
-    set(axQ,'XTickLabel',[]);
-    linkaxes([axOVD,axRMS,axPxx,axCoher,axQ],'x');
-    %legend([hLineLR,hLineLE,hLineIM],'LR','LE','HI', 'Location','southoutside')
-else
-    linkaxes([axOVD,axRMS,axPxx,axCoher],'x');
-end
+% if hasSubjectiveData && ~isempty(FinalTimeQ)
+%     %set(axQ,'YTick',[]);
+%     set(axQ,'XTick',XTicksTime);
+%     set(axQ,'XTickLabel',[]);
+%     linkaxes([axOVD,axRMS,axPxx,axCoher,axQ],'x');
+%     %legend([hLineLR,hLineLE,hLineIM],'LR','LE','HI', 'Location','southoutside')
+% else
+%     linkaxes([axOVD,axRMS,axPxx,axCoher],'x');
+% end
 if bPrint
     set(0,'DefaultFigureColor','remove')
     %     print('-fillpage',[szBaseDir filesep szFolderName filesep 'Fingerprint_' szTestSubject '_' num2str(day(desiredDay)) '_'...

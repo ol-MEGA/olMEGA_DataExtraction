@@ -16,6 +16,7 @@
 % v0.6 SK, fixed session detection
 % v0.7 SF, new header version (for details see end of code)
 % v0.8 SF, new V4 header version (for details see end of code)
+% v0.9 UK, safety net for exceptionally high (erroneous) frame numbers
 
 function stInfo = GetFeatureFileInfo( szFilename, bInfo )
 
@@ -110,6 +111,30 @@ if( fid ) && fid ~= -1
     stInfo.nFramesPerBlock = vFrames(1);
     stInfo.nFrames = sum(vFrames);
     stInfo.vFrames = vFrames;
+    
+    % Safety net to catch exceptionally high frame numbers - probably
+    % overflow during write process?
+    if (stInfo.nFrames>60*stInfo.fs)
+        if contains(szFilename, 'PSD')
+            stInfo.nFrames = 480;
+            stInfo.nFramesPerBlock = 480;
+            stInfo.vFrames = 480;
+        elseif contains(szFilename, 'RMS')
+            stInfo.nFrames = 4800;
+            stInfo.nFramesPerBlock = 4800;
+            stInfo.vFrames = 4800;
+        elseif contains(szFilename, 'ZCR')
+            stInfo.nFrames = 4800;
+            stInfo.nFramesPerBlock = 4800;
+            stInfo.vFrames = 4800;
+        elseif contains(szFilename, 'VTB')
+            stInfo.nFrames = 15000;
+            stInfo.nFramesPerBlock = 15000;
+            stInfo.vFrames = 15000;
+        end
+        warning('feature file %s is corrupt. Assuming standard length.',szFilename);
+    end
+    
     stInfo.BlockSizeInSamples = (vFrames(1)-1) * stInfo.HopSizeInSamples + stInfo.FrameSizeInSamples;
     stInfo.mBlockTime = mBlockTime;
     

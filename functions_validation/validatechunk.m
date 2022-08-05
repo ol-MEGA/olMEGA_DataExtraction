@@ -36,6 +36,7 @@ function [errorCodes, percentErrors] = validatechunk(szChunkName,configStruct)
 %                           -2: at least one RMS value was too LOW
 %                           -3: data is mono
 %                           -4: Coherence (real part) is invalid
+%                           -5: No data can be retrieved
 
 % Author: N.Schreiber (c)
 % Version History:
@@ -45,6 +46,7 @@ function [errorCodes, percentErrors] = validatechunk(szChunkName,configStruct)
 % Ver. 0.04 changed MSC to real part of coherence March 2018 			 NS
 % Ver. 0.05 Reaction to missing calibration values in feature files -
 %           needs to be improved but works for now, 21-12-15             UK
+% Ver. 0.06 New error code: -5 (some PSD files show up as empty)         UK
 % ---------------------------------------------------------
 
 % Error codes
@@ -52,77 +54,91 @@ isTooLoud = -1;
 isTooQuiet = -2;
 isMono = -3;
 isInvalidCoherence = -4;
+hasNoData = -5;
 
 errorCodes = [];
 percentErrors = [];
 if contains(szChunkName, 'RMS')
     [RMSFeatData]= LoadFeatureFileDroidAlloc(szChunkName);
-    stInfo = GetFeatureFileInfo(szChunkName);
-    
-    RMSFeatData = 20*log10(RMSFeatData);
-    
-    if stInfo.calibrationInDb == [0, 0]
-        fThresholdLoud = configStruct.upperThresholdRMS - 110;
-        fThresholdQuiet = configStruct.lowerThresholdRMS - 110;
+    if isempty(RMSFeatData)
+        errorCodes(end+1) = hasNoData;
+        percentErrors(end+1) = 1.0;
+        
     else
-        fThresholdLoud = configStruct.upperThresholdRMS;
-        fThresholdQuiet = configStruct.lowerThresholdRMS;
-    end
-    
-    tooLoudPercent = sum(RMSFeatData(:) > fThresholdLoud) / length(RMSFeatData(:));
-    tooQuietPercent = sum(RMSFeatData(:) < fThresholdQuiet) / length(RMSFeatData(:));
-    monoPercent = sum((RMSFeatData(:,1) -min(RMSFeatData(:,1)))...
-        ./max((RMSFeatData(:,1) -min(RMSFeatData(:,1)))) ...
-        == (RMSFeatData(:,2) -min(RMSFeatData(:,2)))...
-        ./max((RMSFeatData(:,2) -min(RMSFeatData(:,2)))))...
-        / length(RMSFeatData(:,1));
-    
-    if tooLoudPercent > configStruct.errorTolerance
-        errorCodes(end+1) = isTooLoud;
-        percentErrors(end+1) = tooLoudPercent;
-    end
-    if tooQuietPercent > configStruct.errorTolerance
-        errorCodes(end+1) = isTooQuiet;
-        percentErrors(end+1) = tooQuietPercent;
-    end
-
-
-    if monoPercent > configStruct.errorTolerance
-        errorCodes(end+1) = isMono;
-        percentErrors(end+1) = monoPercent;
+        
+        stInfo = GetFeatureFileInfo(szChunkName);
+        
+        RMSFeatData = 20*log10(RMSFeatData);
+        
+        if stInfo.calibrationInDb == [0, 0]
+            fThresholdLoud = configStruct.upperThresholdRMS - 110;
+            fThresholdQuiet = configStruct.lowerThresholdRMS - 110;
+        else
+            fThresholdLoud = configStruct.upperThresholdRMS;
+            fThresholdQuiet = configStruct.lowerThresholdRMS;
+        end
+        
+        tooLoudPercent = sum(RMSFeatData(:) > fThresholdLoud) / length(RMSFeatData(:));
+        tooQuietPercent = sum(RMSFeatData(:) < fThresholdQuiet) / length(RMSFeatData(:));
+        monoPercent = sum((RMSFeatData(:,1) -min(RMSFeatData(:,1)))...
+            ./max((RMSFeatData(:,1) -min(RMSFeatData(:,1)))) ...
+            == (RMSFeatData(:,2) -min(RMSFeatData(:,2)))...
+            ./max((RMSFeatData(:,2) -min(RMSFeatData(:,2)))))...
+            / length(RMSFeatData(:,1));
+        
+        if tooLoudPercent > configStruct.errorTolerance
+            errorCodes(end+1) = isTooLoud;
+            percentErrors(end+1) = tooLoudPercent;
+        end
+        if tooQuietPercent > configStruct.errorTolerance
+            errorCodes(end+1) = isTooQuiet;
+            percentErrors(end+1) = tooQuietPercent;
+        end
+        
+        
+        if monoPercent > configStruct.errorTolerance
+            errorCodes(end+1) = isMono;
+            percentErrors(end+1) = monoPercent;
+        end
     end
     
 elseif contains(szChunkName, 'PSD')
     [PSDFeatData] = LoadFeatureFileDroidAlloc(szChunkName);
-    [Cxy,Pxx,Pyy] = get_psd(PSDFeatData);
-    
-    % Compute the magnitude squared coherence
-    Cohe = real(Cxy./(sqrt(Pxx.*Pyy) + eps));
-    
-    % Define parameters for plotting
-    FftSize = size(Pxx,2);
-    stBandDef.StartFreq = 125;
-    stBandDef.EndFreq = 8000;
-    stBandDef.Mode = 'onethird';
-    stBandDef.fs = 16000;
-    [stBandDef]=fftbin2freqband(FftSize,stBandDef);
-    stBandDef.skipFrequencyNormalization = 1;
-    
-    % Calculate the indices of the bins over which the mean is taken
-    lowBounds = ...
-        floor([configStruct.lowerBinCohe configStruct.upperBinCohe]...
-        .*FftSize/(stBandDef.fs/2));
-    
-    % Take the mean from the lower to the upper defined bin
-    meanLowFreqBinsCohe = mean(Cohe(lowBounds(1):lowBounds(2),:),1);
-    
-    % Definition of invalidity
-    invalidCoherence = (meanLowFreqBinsCohe > configStruct.upperThresholdCohe);
-    invalidCoherencePercent = sum(invalidCoherence) / length(invalidCoherence);
-    
-    if invalidCoherencePercent > configStruct.errorTolerance
-        errorCodes(end+1) = isInvalidCoherence;
-        percentErrors(end+1) = invalidCoherencePercent;
+    if isempty(PSDFeatData)
+        errorCodes(end+1) = hasNoData;
+        percentErrors(end+1) = 1.0;
+        
+    else
+        [Cxy,Pxx,Pyy] = get_psd(PSDFeatData);
+        
+        % Compute the magnitude squared coherence
+        Cohe = real(Cxy./(sqrt(Pxx.*Pyy) + eps));
+        
+        % Define parameters for plotting
+        FftSize = size(Pxx,2);
+        stBandDef.StartFreq = 125;
+        stBandDef.EndFreq = 8000;
+        stBandDef.Mode = 'onethird';
+        stBandDef.fs = 16000;
+        [stBandDef]=fftbin2freqband(FftSize,stBandDef);
+        stBandDef.skipFrequencyNormalization = 1;
+        
+        % Calculate the indices of the bins over which the mean is taken
+        lowBounds = ...
+            floor([configStruct.lowerBinCohe configStruct.upperBinCohe]...
+            .*FftSize/(stBandDef.fs/2));
+        
+        % Take the mean from the lower to the upper defined bin
+        meanLowFreqBinsCohe = mean(Cohe(lowBounds(1):lowBounds(2),:),1);
+        
+        % Definition of invalidity
+        invalidCoherence = (meanLowFreqBinsCohe > configStruct.upperThresholdCohe);
+        invalidCoherencePercent = sum(invalidCoherence) / length(invalidCoherence);
+        
+        if invalidCoherencePercent > configStruct.errorTolerance
+            errorCodes(end+1) = isInvalidCoherence;
+            percentErrors(end+1) = invalidCoherencePercent;
+        end
     end
 end
 

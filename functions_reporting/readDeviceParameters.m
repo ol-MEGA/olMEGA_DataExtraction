@@ -193,7 +193,9 @@ else % Data results from "IHAB" study
     end
     
     % Close file
-    fclose(fid);
+    if exist('fid', 'var')
+        fclose(fid);
+    end
     
 end
 

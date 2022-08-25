@@ -1798,74 +1798,85 @@ classdef olMEGA_DataExtraction < handle
             
             sCommand_quest_features = [obj.prefix, 'adb ls ', obj.sMobileDir, '/features'];
             [~, cmdout] = system(sCommand_quest_features);
-            cLines_features = splitlines(cmdout);
-            cLines_features(1:2) = [];
-            nLines_features = length(cLines_features);
+            if (length(cmdout) > 0)
+                cLines_features = splitlines(cmdout);
+                cLines_features(1:2) = [];
+                nLines_features = length(cLines_features);
             
-            obj.cListQuestionnaire{end} = 'Copying feature files: 0%';
-            obj.hListBox.Value = obj.cListQuestionnaire;
+                obj.cListQuestionnaire{end} = 'Copying feature files: 0%';
+                obj.hListBox.Value = obj.cListQuestionnaire;
             
-            nApproxTime = 0;
-            tic;
-            iCount = 0;
+                nApproxTime = 0;
+                tic;
+                iCount = 0;
             
-            vStatus = [];
-            for iFeature = randperm(nLines_features)
+                vStatus = [];
+                for iFeature = randperm(nLines_features)
                 
-                if obj.bIsPhoneConnected
+                    if obj.bIsPhoneConnected
                 
-                    iCount = iCount + 1;
+                        iCount = iCount + 1;
 
-                    cLine = split(cLines_features{iFeature});
-                    if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
-                        sCommand_features = strcat(obj.prefix, "adb pull ", obj.sMobileDir, "/features/",cLine{4}," ", sFolder_features);
-                        [status, ~] = system(sCommand_features);
-                        vStatus = [vStatus, status];
+                        cLine = split(cLines_features{iFeature});
+                        if ((length(cLine) > 1) && (~strcmp(cLine{4},'.')) && (~strcmp(cLine{4},'..')))
+                            sCommand_features = strcat(obj.prefix, "adb pull ", obj.sMobileDir, "/features/",cLine{4}," ", sFolder_features);
+                            [status, ~] = system(sCommand_features);
+                            vStatus = [vStatus, status];
 
-                        nTimeTaken = toc;
-                        nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
+                            nTimeTaken = toc;
+                            nApproxTime = nTimeTaken/iCount*(nLines_features - iCount);
 
-                        obj.cListQuestionnaire{end} = sprintf('Copying feature files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
+                            obj.cListQuestionnaire{end} = sprintf('Copying feature files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
+                            obj.hListBox.Value = obj.cListQuestionnaire;
+                            drawnow;
+                        end
+                    else
+                        errordlg('Device was disconnected. Process was aborted.');
+                        obj.cListQuestionnaire{end} = 'Copying process aborted.';
                         obj.hListBox.Value = obj.cListQuestionnaire;
+                        obj.hLabel_Calculating.Text = 'Calculating';
+                        obj.hLabel_Calculating.Visible = 'Off';
+                        obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
+                        obj.hButton_Open.Enable = 'On';
+                        obj.hButton_Clear.Enable = 'On';
                         drawnow;
+                        return;
                     end
-                else
-                    errordlg('Device was disconnected. Process was aborted.');
-                    obj.cListQuestionnaire{end} = 'Copying process aborted.';
-                    obj.hListBox.Value = obj.cListQuestionnaire;
-                    obj.hLabel_Calculating.Text = 'Calculating';
-                    obj.hLabel_Calculating.Visible = 'Off';
-                    obj.hLabel_Calculating.Position(3) = obj.nCalculatingWidth;
-                    obj.hButton_Open.Enable = 'On';
-                    obj.hButton_Clear.Enable = 'On';
-                    drawnow;
-                    return;
-                end
                 
-            end
+                end
             
-            obj.cListQuestionnaire{end} = sprintf('Copying feature files: %.0i%%', 100);
-            obj.hListBox.Value = obj.cListQuestionnaire;
+                obj.cListQuestionnaire{end} = sprintf('Copying feature files: %.0i%%', 100);
+                obj.hListBox.Value = obj.cListQuestionnaire;
             
-            if (mean(vStatus) == 0)
-                obj.cListQuestionnaire{end} = '[x] Feature files copied.';
-                obj.bFeatures = 1;
-                obj.hStat_Features.Value = num2str(length(vStatus));
+                if (mean(vStatus) == 0)
+                    obj.cListQuestionnaire{end} = '[x] Feature files copied.';
+                    obj.bFeatures = 1;
+                    obj.hStat_Features.Value = num2str(length(vStatus));
+                else
+                    obj.cListQuestionnaire{end} = '[  ] No Feature data was copied.';
+                    obj.hStat_Features.Value = '0';
+                    obj.bFeatures = 0;
+                end
+            
+                obj.hListBox.Value = obj.cListQuestionnaire;
+            
+            
+                obj.hLabel_Calculating.Text = 'Calculating';
+                obj.hLabel_Calculating.Visible = 'Off';
+            
+                if obj.bLog
+                    obj.extractConnection();
+                end
             else
                 obj.cListQuestionnaire{end} = '[  ] No Feature data was copied.';
                 obj.hStat_Features.Value = '0';
                 obj.bFeatures = 0;
+                if obj.bLog
+                    obj.extractConnection();
+                end
+                drawnow;
             end
-            
-            obj.hListBox.Value = obj.cListQuestionnaire;
-            
-            
-            obj.hLabel_Calculating.Text = 'Calculating';
-            obj.hLabel_Calculating.Visible = 'Off';
-            
-            if obj.bLog
-                obj.extractConnection();
-            end
+                
             
         end
         

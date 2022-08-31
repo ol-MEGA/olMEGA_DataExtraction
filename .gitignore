@@ -8,3 +8,4 @@ functions/IdentificationProbandSystem_old.mat
 functions/reshapeIDStruct.m
 functions/structToContainersMap.m
 analysis/OnePerson.mat
+*.feat

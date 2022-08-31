@@ -1,4 +1,4 @@
-%GetFeatureFileInfo  Extracts information of Android-generated Feature-Files
+% GetFeatureFileInfo  Extracts information of Android-generated Feature-Files
 %   GetFeatureFileInfo('filename') extracts the metadata in "filename"
 %   input:
 %       szFilename          android feature file

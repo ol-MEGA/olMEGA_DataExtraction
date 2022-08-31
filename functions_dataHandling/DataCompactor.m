@@ -36,6 +36,8 @@ function [DataVecOut,TimeVecOut,DataVecRes,TimeVecRes,NrOfDataPoints]=DataCompac
 % Ver. 0.01 initial create (empty) 18-May-2017  Initials (eg. JB)
 % Ver. 0.02 add nargout == 3 29-Sept-2019 JP
 % Ver. 0.03 save residuals 01-Oct-2019 JP
+% ver 0.04, debugged an error if only one sample is averaged in mean
+% function 30.08.2022 JB
 
 % pre-allocate output params
 TimeVecRes = [];
@@ -79,7 +81,7 @@ if strcmpi(stControl.szTimeCompressionMode,'mean')
     while (BlockIndex(end) <= length(TimeVec))
         % The block time is the middle of the block
         TimeVecOut(Counter) = TimeVec(BlockIndex(round(length(BlockIndex)/2)));
-        DataVecOut(Counter,:) = mean(DataVec(BlockIndex,:));
+        DataVecOut(Counter,:) = mean(DataVec(BlockIndex,:),1);
         
         BlockIndex = BlockIndex + BlockFeed;
         Counter = Counter + 1;

@@ -9,3 +9,6 @@ functions/reshapeIDStruct.m
 functions/structToContainersMap.m
 analysis/OnePerson.mat
 *.feat
+*.xml
+*.txt
+*.mat

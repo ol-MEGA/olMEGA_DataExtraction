@@ -62,7 +62,7 @@ function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
 % Ver. 1.0 object-based version, new input 26-Sept-2019 JP
 % Ver. 1.1 added correction of frame time 21-Jun-2021 JP
 % Ver. 1.2 adaptation to new naming scheme, line 252 represents old one UK
-
+% Ver  1.3 adaptation to matlab2022 JB
 % preallocate output parameters
 Data = [];
 TimeVec = [];
@@ -114,19 +114,26 @@ end
 
 % check if the day has objective data
 % build the full directory
-szDir = [obj.stSubject.Folder filesep obj.stSubject.Name '_AkuData'];
+szDir = obj.stSubject.Folder+filesep+obj.stSubject.Name+'_AkuData';
 
 % List all feat files
 AllFeatFiles = listFiles(szDir,'*.feat');
 AllFeatFiles = {AllFeatFiles.name}';
-isInValidFile = contains(AllFeatFiles, '._');
-AllFeatFiles(isInValidFile) = [];
+%isInValidFile = contains(AllFeatFiles, '._');
+%AllFeatFiles(isInValidFile) = [];
 
 % Get names wo. path
 [~,AllFeatFiles] = cellfun(@fileparts, AllFeatFiles,'UniformOutput',false);
 
 % Append '.feat' extension for comparison to corrupt file names
-AllFeatFiles = strcat(AllFeatFiles,'.feat');
+% AllFeatFiles = strcat(AllFeatFiles,'.feat');
+for kk = 1:length(AllFeatFiles)
+    OneFeatFileName = AllFeatFiles{kk} + '.feat';
+    onename = convertStringsToChars(OneFeatFileName);
+    AllFeatFiles2{kk} = onename;
+end
+AllFeatFiles = AllFeatFiles2;
+
 
 % Load txt file with corrupt file names
 corruptTxtFile = fullfile(obj.stSubject.Folder,'corrupt_files.txt');
@@ -189,7 +196,7 @@ end
 iStaticNumSamples = ceil(iStaticSamplesPerPixel*iPlotWidth);
 
 % get infos about feature file for pre-allocation
-[FeatData, ~,stInfoFile]= LoadFeatureFileDroidAlloc([szDir filesep featFilesWithoutCorrupt{1}]);
+[FeatData, ~,stInfoFile]= LoadFeatureFileDroidAlloc(szDir+filesep+featFilesWithoutCorrupt{1});
 
 % get duration in sec of one feature file (i.e. 60 sec)
 LenOneFile_s = stInfoFile.nFrames * stInfoFile.FrameSizeInSamples / stInfoFile.fs;
@@ -244,7 +251,7 @@ if isFileBased
         szFileName = featFilesWithoutCorrupt{fileIdx};
         
         % load data from feature file
-        [FeatData, mFrameTime, stFileInfo] = LoadFeatureFileDroidAlloc([szDir filesep szFileName]);
+        [FeatData, mFrameTime, stFileInfo] = LoadFeatureFileDroidAlloc(szDir+filesep+szFileName);
         
         %THIS IS A PROBLEM!
         

@@ -19,15 +19,20 @@ function [dateVecAll,UniqueDays] = showAvailableFeatureDataOneTestSubject(obj, s
 % szDir = [szBaseDir filesep szProbandNameDir filesep szProbandName '_AkuData' ];
 
 % List all feat files
-AllFeatFiles = listFiles([obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData'], '*.feat');
+AllFeatFiles = listFiles(obj.stSubject.Folder+filesep+obj.stSubject.Name+'_AkuData', '*.feat');
 AllFeatFiles = {AllFeatFiles.name}';
 
 % Get names wo. path
 [~,AllFeatFiles] = cellfun(@fileparts, AllFeatFiles,'UniformOutput',false);
 
 % Append '.feat' extension for comparison to corrupt file names
-AllFeatFiles = strcat(AllFeatFiles,'.feat');
-
+% AllFeatFiles = strcat(AllFeatFiles,'.feat');
+for kk = 1:length(AllFeatFiles)
+    OneFeatFileName = AllFeatFiles{kk} + '.feat';
+    onename = convertStringsToChars(OneFeatFileName);
+    AllFeatFiles2{kk} = onename;
+end
+AllFeatFiles = AllFeatFiles2;
 % Load txt file with corrupt file names
 corruptTxtFile = fullfile(obj.stSubject.Folder,'corrupt_files.txt');
 if ~exist(corruptTxtFile,'file')

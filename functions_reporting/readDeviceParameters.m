@@ -103,7 +103,7 @@ if obj.isHallo % Data results from "HALLO" study
     
 else % Data results from "IHAB" study
     
-    sFolderQuest = [sFolder, filesep, obj.stSubject.Name, '_Quest'];
+    sFolderQuest = sFolder+filesep+obj.stSubject.Name+'_Quest';
     stDir = dir(sFolderQuest);
     stDir(1:2) = [];
     isInValidFile = arrayfun(@(x)(contains(x.name, '._')), stDir);
@@ -111,7 +111,7 @@ else % Data results from "IHAB" study
     
     if ~isempty(stDir)
         
-        sFileQuest = [sFolderQuest, filesep, stDir(1).name];
+        sFileQuest = sFolderQuest+filesep+stDir(1).name;
         fid = fopen(sFileQuest, 'r');
         
         % Extracting Survey URI

@@ -19,7 +19,7 @@ function caDates = getdatesonesubject(obj)
 
 
 % List the whole content in the subject directory
-stFeatFiles = dir([obj.stSubject.Folder filesep, obj.stSubject.Name, '_AkuData']);
+stFeatFiles = dir(obj.stSubject.Folder+filesep+obj.stSubject.Name+"_AkuData");
 
 % Get rid of '.' and '..'
 stFeatFiles(1:2) = [];

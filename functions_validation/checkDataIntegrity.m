@@ -1,14 +1,6 @@
-% File to check all feature data if data are corrupt
-% J. Bitzer @TGM @ Jade Hochschule
-% V 1.0 May 2017
-% 21-12-02, UK: Some comments added after reported error
-% 21-12-15, UK: Exchanged VALIDBLOCKS for VTB to prevent
-%               mis-classificaation of error blocks
-
-
 function checkDataIntegrity(obj)
 
-szCurrentDir = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData' ];
+szCurrentDir = obj.stSubject.Folder+filesep+obj.stSubject.Name+'_AkuData';
 
 % obtains list of all files
 AllDataEntries = listFiles(szCurrentDir,'*.feat');
@@ -54,8 +46,3 @@ end
 fclose(fid);
 
 end
-
-
-
-
-

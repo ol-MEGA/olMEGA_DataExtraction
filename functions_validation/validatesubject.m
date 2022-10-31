@@ -52,6 +52,7 @@ function stSubject = validatesubject(obj, configStruct)
 % Ver. 0.02 first running version 04-Jan-2018 			 NS
 % Ver. 0.03 added config struct 02-Feb-2018 			 NS
 % Ver. 0.04 safety net for missing feature data          UK
+% Ver  0.05 adaptation to matlab 2022                    JB
 % ---------------------------------------------------------
 
 % Parameters for version check
@@ -65,9 +66,12 @@ stSubject.FolderName = obj.stSubject.Folder;
 stSubject.SubjectID = obj.stSubject.Name;
 
 % Get into respective '_AkuData'-directory
-szAkuDataPath = fullfile(obj.stSubject.Folder, [obj.stSubject.Name '_AkuData']);
-
-szMatFile = fullfile(obj.stSubject.Folder, [obj.stSubject.Name '.mat']);
+% szAkuDataPath = fullfile(obj.stSubject.Folder, [obj.stSubject.Name '_AkuData']);
+szAkuDataPath = fullfile(obj.stSubject.Folder, obj.stSubject.Name+"_AkuData");
+% sz
+% MatFile = fullfile(obj.stSubject.Folder, [obj.stSubject.Name '.mat']);
+szMatFile = fullfile(obj.stSubject.Folder, obj.stSubject.Name);
+szMatFile = szMatFile+'.mat';
 
 if exist(szMatFile, 'file') ~= 2
     
@@ -85,7 +89,14 @@ if exist(szMatFile, 'file') ~= 2
     
     % Get names without paths
     [~,listFeatFiles] = cellfun(@fileparts, listFeatFiles, 'UniformOutput', false);
-    listFeatFiles = strcat(listFeatFiles,'.feat');
+    % listFeatFiles = strcat(listFeatFiles,'.feat');
+    for kk = 1:length(listFeatFiles)
+        OneFeatFileName = listFeatFiles{kk} + '.feat';
+        onename = convertStringsToChars(OneFeatFileName);
+        listFeatFiles2{kk} = onename;
+    end
+    listFeatFiles = listFeatFiles2;
+
         
     % Get dates of corrupt files to delete all features with that specific time stamp
     %corruptFiles = listFeatFiles(cellfun(@(x) (strcmpi(x(1),'a')), listFeatFiles));
@@ -130,7 +141,7 @@ if exist(szMatFile, 'file') ~= 2
         
         for ii = 1:NumFeatFiles
             % get current file
-            currentFile = [szAkuDataPath filesep listFeatFiles{ii}];
+            currentFile = szAkuDataPath+filesep+listFeatFiles{ii};
             
             [caErrorCodes(ii), caPercentErrors(ii)] = validatechunk(currentFile, configStruct);
         end

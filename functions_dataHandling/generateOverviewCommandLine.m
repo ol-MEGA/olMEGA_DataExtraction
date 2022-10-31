@@ -15,8 +15,8 @@ fprintf('\t.analysing subject data -');
 obj.hProgressCommandLine.startTimer();
 
 
-subjectMatFile = fullfile(obj.stSubject.Folder,...
-    [obj.stSubject.Name '.mat']);
+subjectMatFile = fullfile(obj.stSubject.Folder,obj.stSubject.Name);
+subjectMatFile = subjectMatFile + '.mat';
 if exist(subjectMatFile, 'file')
     load(subjectMatFile);
 else
@@ -47,7 +47,8 @@ AllDates = getdatesonesubject(obj);
 numAvailableDataAllDays = zeros(length(AllDates),1);
 numInvalidDay = zeros(length(AllDates),1);
 percentInvalidDay = zeros(length(AllDates),1);
-txtFile = fullfile(obj.stSubject.Folder,[obj.stSubject.Name '.txt']);
+txtFile = fullfile(obj.stSubject.Folder,obj.stSubject.Name);
+txtFile = txtFile + '.txt';
 
 %if exist(txtFile, 'file')
 %    delete(txtFile);

@@ -8,6 +8,8 @@ classdef olMEGA_DataExtraction < handle
     % 21-12-15, UK: - Adjusting to new feature version (v4.0), treatment of
     %                 missing folders in structure improved, better display
     %                 of experiment time
+    % 31.10.22  JB: - Support for MobEval removed, some changes to newer
+    %                 matlab versions
     
     properties
         
@@ -227,7 +229,7 @@ classdef olMEGA_DataExtraction < handle
             
             addpath(genpath(pwd));
 %             rmpath('legacy');
-            rmpath('.git');
+%           rmpath('.git');
             
             
             
@@ -317,6 +319,8 @@ classdef olMEGA_DataExtraction < handle
                     obj.hProgressCommandLine = BlindProgressCommandLine();
                     
                     openSubjectFolder(obj, varargin{1});
+                    
+                    
                     
                     examineObjectiveData(obj);
                     
@@ -1174,7 +1178,7 @@ classdef olMEGA_DataExtraction < handle
         
         function [] = openSubjectFolder(obj, sFolder)
             
-            if (sFolder == 0)
+            if (isempty(sFolder))
                 return;
             end
             
@@ -1257,26 +1261,9 @@ classdef olMEGA_DataExtraction < handle
             
             sQuestName = '_Quest';
             
-            % Check for (Very) old version
-            if exist([sFolder, filesep, cSubjectData{1}, '_Mobeval'], 'dir') == 7
-                
-                obj.isHallo = true;
-                sFolderQuest = [sFolder, filesep, cSubjectData{1}, '_Mobeval'];
-                stDir = rdir([sFolderQuest, filesep, '**\*.xml']);
-                sProfile = '(\w){8}-(\w){4}-(\w){4}-(\w){4}-(\w){12}.xml';
-                
-                for iDir = 1:length(stDir)
-                    
-                    cContents = regexp(stDir(iDir).name, sProfile, 'tokens');
-                    if ~isempty(cContents)
-                        sQuestName = stDir(iDir).folder;
-                        continue;
-                    end
-                end
-                
-            else
-                sQuestName = [sFolder, filesep, cSubjectData{1}, sQuestName];
-            end
+            % sQuestName = [sFolder, filesep, cSubjectData{1}, sQuestName];
+            % JB old matlab version above
+            sQuestName = sFolder+filesep+cSubjectData{1}+sQuestName;
             
             stQuestionnaires = dir(sQuestName);
             if ~isempty(stQuestionnaires)
@@ -1302,7 +1289,8 @@ classdef olMEGA_DataExtraction < handle
 
             % check for feature data
             
-            stFeatures = dir([sFolder, filesep, cSubjectData{1}, '_AkuData']);
+            % stFeatures = dir([sFolder, filesep, cSubjectData{1}, '_AkuData']);
+            stFeatures = dir(sFolder+filesep+cSubjectData{1}+'_AkuData');
             if ~isempty(stFeatures)
                 stFeatures(1:2) = [];
             end

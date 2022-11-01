@@ -1258,12 +1258,7 @@ classdef olMEGA_DataExtraction < handle
             end
             
             % check for questionnaires
-            
-            sQuestName = '_Quest';
-            
-            % sQuestName = [sFolder, filesep, cSubjectData{1}, sQuestName];
-            % JB old matlab version above
-            sQuestName = sFolder+filesep+cSubjectData{1}+sQuestName;
+            sQuestName = [sFolder, filesep, cSubjectData{1}, '_Quest'];
             
             stQuestionnaires = dir(sQuestName);
             if ~isempty(stQuestionnaires)
@@ -1288,9 +1283,7 @@ classdef olMEGA_DataExtraction < handle
   
 
             % check for feature data
-            
-            % stFeatures = dir([sFolder, filesep, cSubjectData{1}, '_AkuData']);
-            stFeatures = dir(sFolder+filesep+cSubjectData{1}+'_AkuData');
+            stFeatures = dir([sFolder, filesep, cSubjectData{1}, '_AkuData']);
             if ~isempty(stFeatures)
                 stFeatures(1:2) = [];
             end

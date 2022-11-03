@@ -46,6 +46,9 @@ function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
 %  'useCompression'     logical to compress data (1, default) or not (0);
 %                       compression is done by averaging the data
 %
+%  'useSystemTime'      logical to use system time (1) or block time 
+%                       (0, default) 
+%
 % Returns
 % -------
 % Data :  a matrix containg the feature data
@@ -62,6 +65,7 @@ function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
 % Ver. 1.0 object-based version, new input 26-Sept-2019 JP
 % Ver. 1.1 added correction of frame time 21-Jun-2021 JP
 % Ver. 1.2 adaptation to new naming scheme, line 252 represents old one UK
+% Ver. 1.3 added boolean useSystemTime JP
 
 % preallocate output parameters
 Data = [];
@@ -98,6 +102,7 @@ p.addParameter('stInfo', [], @(x) isstruct(x));
 p.addParameter('PlotWidth', iDefaultPlotWidth, @(x) isnumeric(x));
 p.addParameter('SamplesPerPixel', iDefaultSamplesPerPixel, @(x) isnumeric(x));
 p.addParameter('useCompression', true, @(x) islogical(x));
+p.addParameter('useSystemTime', false, @(x) islogical(x));
 p.parse(obj,varargin{:});
 
 % Re-assign values
@@ -105,6 +110,7 @@ stInfo = p.Results.stInfo;
 iPlotWidth = p.Results.PlotWidth;
 iStaticSamplesPerPixel = p.Results.SamplesPerPixel;
 useCompression = p.Results.useCompression;
+useSystemTime = p.Results.useSystemTime;
 
 if isempty(stInfo)
     % call function to check input date format and plausibility
@@ -254,6 +260,11 @@ if isFileBased
 %             mFrameTime = datetime(szFileName(12:29), 'InputFormat', 'yyyyMMdd_HHmmssSSS') + seconds(stFileInfo.mFrameTime_rel(:, 1));
             mFrameTime = datetime(szFileName(5:22), 'InputFormat', 'yyyyMMdd_HHmmssSSS') + seconds(stFileInfo.mFrameTime_rel(:, 1));
             mFrameTime = datenum(mFrameTime);
+        end
+
+        % adjust time vector to system time
+        if useSystemTime
+            mFrameTime = mFrameTime - datenum(stFileInfo.mBlockTime - stFileInfo.SystemTime);
         end
         
         if strcmp(szFeature, 'PSD')

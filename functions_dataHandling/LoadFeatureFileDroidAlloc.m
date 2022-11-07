@@ -31,6 +31,7 @@
 % v0.8 SK   fixed indexing for different frames/block
 % v0.9 SK   mFrameTime now contains absolute start and end time of each
 %           rame as serial date
+% v0.10 JP  stInfo contains time correction value
 
 function [ mFeatureData, mFrameTime, stInfo ] = LoadFeatureFileDroidAlloc( szFilename, start, stop)
 
@@ -108,9 +109,11 @@ if (fid)
         mFeatureData(idx,:) = tempData(3:end,:).';
         mFrameTime_rel(idx,:) = tempData(1:2,:).';
         
-        mFrameTime(idx,:) = mFrameTime_rel(idx,:)/(24*60*60) + blocktime;
-        %mFrameTime(idx,:) = repmat(datenum(stInfo.mBlockTime(iBlock,:)),length(idx),2);
-        %mFrameTime(idx,end) = mFrameTime(idx,end) + mFrameTime_rel(idx,1);
+        if stInfo.TimeCorrection > 0
+            mFrameTime(idx,:) = mFrameTime_rel(idx,:)/(24*60*60) + blocktime - datenum(stInfo.TimeCorrection);
+        else
+            mFrameTime(idx,:) = mFrameTime_rel(idx,:)/(24*60*60) + blocktime;
+        end
         
     end % for iBlock
     

@@ -47,6 +47,7 @@ function [nSampleRate, vShift]=determineSampleRate(obj,szFeature,varargin)
 % Author: J.Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create (empty) 03-Nov-2022 JP
+% Ver. 0.02 use just first and last file of continuous segment
 
 % check for valid feature data
 vFeatureNames = {'RMS', 'PSD', 'ZCR'};
@@ -151,9 +152,9 @@ if isempty(featFilesWithoutCorrupt)
 end
 
 
-% loop over each feature file
+% loop over first and last feature file
 vShift = zeros(NrOfFiles, 1);
-for fileIdx = 1:NrOfFiles
+for fileIdx = [1 NrOfFiles]
 
     szFileName = featFilesWithoutCorrupt{fileIdx};
 

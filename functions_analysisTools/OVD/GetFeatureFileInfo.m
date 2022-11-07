@@ -107,6 +107,7 @@ if( fid ) && fid ~= -1
     end
     stInfo.nDimensions = nDim; % including time
     stInfo.nBlocks = nBlocks;
+    stInfo.TimeCorrection = -1; % JP: init time correction
     stInfo.StartTime = mBlockTime;
     stInfo.nFramesPerBlock = vFrames(1);
     stInfo.nFrames = sum(vFrames);

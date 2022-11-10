@@ -250,24 +250,9 @@ if isFileBased
         szFileName = featFilesWithoutCorrupt{fileIdx};
         
         % load data from feature file
-        [FeatData, mFrameTime, stFileInfo] = LoadFeatureFileDroidAlloc([szDir filesep szFileName]);
-        
-        %THIS IS A PROBLEM!
-        
-        % find files with wrong blocktime and correct it
-        dBlockDay = datetime(stFileInfo.mBlockTime(1:3));
-        if dBlockDay ~= stInfo.StartDay 
-%             mFrameTime = datetime(szFileName(12:29), 'InputFormat', 'yyyyMMdd_HHmmssSSS') + seconds(stFileInfo.mFrameTime_rel(:, 1));
-            mFrameTime = datetime(szFileName(5:22), 'InputFormat', 'yyyyMMdd_HHmmssSSS') + seconds(stFileInfo.mFrameTime_rel(:, 1));
-            mFrameTime = datenum(mFrameTime);
-        end
-
-        % adjust time vector to system time
-        if useSystemTime
-            mFrameTime = mFrameTime - datenum(stFileInfo.mBlockTime - stFileInfo.SystemTime);
-        end
-        
-        if strcmp(szFeature, 'PSD')
+        [FeatData, mFrameTime] = LoadFeatureFileDroidAlloc([szDir filesep szFileName], useSystemTime);
+       
+        if strcmp(szFeature, 'PSD') && stInfoFile.ProtokollVersion <= 2
             FeatData(end, :) = [];
         end
         

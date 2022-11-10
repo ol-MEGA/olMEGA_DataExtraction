@@ -172,10 +172,13 @@ for fileIdx = [1 NrOfFiles]
     end
 end
 
-% determine true sample rate!!!
+% determine hardware sample rate
 nRecLen = datenum(endTime - startTime) * 24 * 60 * 60; % in sec
 nRecLenSys = datenum(endTimeSys - startTimeSys)* 24 * 60 * 60; % in sec
-nSampleRate = nRecLenSys/nRecLen*stFileInfo.fs;
+nSampleRate = nRecLen/nRecLenSys*stFileInfo.fs;
+
+% save hardware fs to feature file
+%tba
 
 end
 

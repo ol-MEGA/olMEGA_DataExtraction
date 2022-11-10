@@ -1,25 +1,3 @@
-%LOADFEATUREFILE  Loads a feature file, created by FEATUREEXTRACTION.
-%   LOADFEATUREFILEALLOC('filename') loads all data saved in "filename"
-%   and returns it as column vector, containing one feature frame per row.
-%   So the number of rows equals the number of avaliable feature frames
-%   and the number of columns matches the feature dimension.
-%
-%   input:
-%       szFilename          Android feature file
-%       start               Read data from here
-%       stop                Stop reading here. If ommited, read until EOF.
-%                           start and stop are either 3-element vectors
-%                           ([HH MM SS], e.g. [12 34 56] would be 12:34:56)
-%                           or block indices (skalar)
-%
-%   output:
-%       mFeatureData        What we're after (nFrames x nFeatures)
-%       mFrameTime          Frames' absolute start time, datevec.
-%                           get desired format using e.g. datestr():
-%                           datestr(mFrameTime,'dd-mmm-yyyy HH:MM:SS:FFF')
-%       stInfo              Parameter and metadata
-%
-% Auth: Sven Fischer, Joerg Bitzer
 % v0.2
 % v0.3 JB,  Vise deleted and new stInfo introduced
 % v0.4 SK,  force big endian for java compatability
@@ -31,9 +9,33 @@
 % v0.8 SK   fixed indexing for different frames/block
 % v0.9 SK   mFrameTime now contains absolute start and end time of each
 %           rame as serial date
-% v0.10 JP  stInfo contains time correction value
+% v0.10 JP  optional time correction to system time and hardware sample  
+%           rate, excluded start and stop index as input for reading data
 
-function [ mFeatureData, mFrameTime, stInfo ] = LoadFeatureFileDroidAlloc( szFilename, start, stop)
+function [mFeatureData, mFrameTime, stInfo] = LoadFeatureFileDroidAlloc(szFilename, bTimeCorrection)
+%LOADFEATUREFILE  Loads a feature file, created by FEATUREEXTRACTION.
+%   LOADFEATUREFILEALLOC('filename') loads all data saved in "filename"
+%   and returns it as column vector, containing one feature frame per row.
+%   So the number of rows equals the number of avaliable feature frames
+%   and the number of columns matches the feature dimension.
+%
+%   input:
+%       szFilename          Android feature file
+%       bTimeCorrection     boolean to apply time corretion to system time 
+%                           and hardware sample rate (default false)
+%
+%   output:
+%       mFeatureData        What we're after (nFrames x nFeatures)
+%       mFrameTime          Frames' absolute start time, datevec.
+%                           get desired format using e.g. datestr():
+%                           datestr(mFrameTime,'dd-mmm-yyyy HH:MM:SS:FFF')
+%       stInfo              Parameter and metadata
+%
+% Auth: Sven Fischer, Joerg Bitzer
+
+if nargin == 1
+    bTimeCorrection = 0;
+end
 
 cMachineFormat = {0, 'b'};
 
@@ -43,81 +45,47 @@ stInfo = GetFeatureFileInfo(szFilename, 0);
 % Try to open the specified file for Binary Reading.
 fid = fopen( szFilename, 'rb' );
 
-[~, szTmp] = fileparts(szFilename);
-% szDate = szTmp(end-7:end);
-
 % If the file could be opened successfully...
 %if fid >= 1 && stInfo.nFrames == 480
 if (fid)
-    if nargin > 1
-        nBytesFrame = stInfo.nDimensions * 4;
-        
-        if numel(start) > 1 
-            % find index of nearest block (start).
-            [val, idxStart] = min(abs(datenum(stInfo.mBlockTime) - datenum([stInfo.mBlockTime(1,1:3) start])));
-        else
-            idxStart = start;
-        end
-        
-        idxStop = stInfo.nBlocks;
-        
-        nFrames = sum(stInfo.vFrames(idxStart:end));
-        nSkipBytes = sum(stInfo.vFrames(1:idxStart-1)) * nBytesFrame + stInfo.nBytesHeader * (idxStart-1);
-        
-        % jump to 1st block to read
-        fseek(fid, nSkipBytes, -1);
-        
-        if nargin > 2
-            if numel(stop) > 1
-                % find index of nearest block (start).
-                [val, idxStop] = min(abs(datenum(stInfo.mBlockTime) - datenum([stInfo.mBlockTime(1,1:3) stop])));
-            else
-                idxStop = stop;
-            end
-            
-            nFrames = sum(stInfo.vFrames(idxStart:idxStop));
-        end
-        
-    else
-        idxStart = 1;
-        idxStop = stInfo.nBlocks;
-        nFrames = stInfo.nFrames;
-    end
+    idxStart = 1;
+    idxStop = stInfo.nBlocks;
+    nFrames = stInfo.nFrames;
     
     mFeatureData = zeros(nFrames,stInfo.nDimensions-2);
     mFrameTime_rel = zeros(nFrames,2); % seconds, beginning and end of frame
-    %mFrameTime = zeros(nFrames,6); % date vector, beginning of frame
-    mFrameTime = mFrameTime_rel;
     
-    for iBlock = idxStart:idxStop
-        
-        % convert blocktime to serial date
-        blocktime = datenum(stInfo.mBlockTime(iBlock,:));
-        
+    for iBlock = idxStart:idxStop        
         fseek(fid, stInfo.nBytesHeader, 0);  % skip header
         
-        tempData = fread(fid, [stInfo.nDimensions, stInfo.vFrames(iBlock)], 'float', cMachineFormat{:});
+        tempData = fread(fid, [stInfo.nDimensions, stInfo.vFrames], 'float', cMachineFormat{:});
         
         if iBlock == idxStart
             % idx = 1:stInfo.vFrames(iBlock);
             idx = 1:size(tempData, 2);
         else
-            %             idx = idx(end) + (1:stInfo.vFrames(iBlock));
+            % idx = idx(end) + (1:stInfo.vFrames(iBlock));
             idx = idx(end) + (1:size(tempData, 2));
         end
         
         mFeatureData(idx,:) = tempData(3:end,:).';
         mFrameTime_rel(idx,:) = tempData(1:2,:).';
         
-        if stInfo.TimeCorrection > 0
-            mFrameTime(idx,:) = mFrameTime_rel(idx,:)/(24*60*60) + blocktime - datenum(stInfo.TimeCorrection);
-        else
-            mFrameTime(idx,:) = mFrameTime_rel(idx,:)/(24*60*60) + blocktime;
-        end
-        
     end % for iBlock
     
     fclose( fid );
+        
+    % optional apply time corretion to system time and hardware fs
+    if bTimeCorrection
+        % convert syste,time to serial date
+        systime = datenum(stInfo.SystemTime);
+        corrFactor = stInfo.fs/stInfo.HardwareSampleRate;
+        mFrameTime = corrFactor*mFrameTime_rel(:, 1)/(24*60*60) + systime;
+    else
+        % convert blocktime to serial date
+        blocktime = datenum(stInfo.mBlockTime);
+        mFrameTime = mFrameTime_rel(:, 1)/(24*60*60) + blocktime;
+    end
     
     stInfo.mFrameTime_rel = mFrameTime_rel;
     

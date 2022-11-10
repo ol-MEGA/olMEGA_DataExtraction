@@ -1,13 +1,3 @@
-%GetFeatureFileInfo  Extracts information of Android-generated Feature-Files
-%   GetFeatureFileInfo('filename') extracts the metadata in "filename"
-%   input:
-%       szFilename          android feature file
-%       bInfo               print detailed information
-%
-%   output:
-%       stInfo              parameter and metadata
-%
-% Auth: Sven Fischer, Joerg BitzervFrames, Sven Franz
 % Vers: v0.20
 % Vers v0.3 JB, Vise deleted and new stInfo introduced
 % v0.4 SK, force big endian for java compatability
@@ -17,13 +7,24 @@
 % v0.7 SF, new header version (for details see end of code)
 % v0.8 SF, new V4 header version (for details see end of code)
 % v0.9 UK, safety net for exceptionally high (erroneous) frame numbers
+% v0.10 JP, hardware sample rate as header version 5
 
-function stInfo = GetFeatureFileInfo( szFilename, bInfo )
+function stInfo = GetFeatureFileInfo(szFilename, bInfo)
+%GetFeatureFileInfo  Extracts information of Android-generated Feature-Files
+%   GetFeatureFileInfo('filename') extracts the metadata in "filename"
+%   input:
+%       szFilename          android feature file
+%       bInfo               print detailed information
+%
+%   output:
+%       stInfo              parameter and metadata
+%
+% Auth: Sven Fischer, Joerg Bitzer, Sven Franz
 
 if nargin < 2
     bInfo = false;
 end
-%bInfo=0;
+
 cMachineFormat = {'b'};
 veryOldHeaderSizes = [29, 36]; % Header Sized of V0 and V1
 
@@ -73,6 +74,11 @@ if( fid ) && fid ~= -1
                 stInfo.AndroidID = strtrim(fread(fid, 16, '*char', cMachineFormat{:})');
                 stInfo.BluetoothTransmitterMAC = strtrim(fread(fid, 17, '*char', cMachineFormat{:})');
             end
+            if ProtokollVersion >= 5
+                stInfo.HardwareSampleRate = double(fread(fid, 1, 'float32', cMachineFormat{:}));
+            else
+                stInfo.HardwareSampleRate = stInfo.fs;
+            end
             stInfo.nBytesHeader = ftell(fid);
             stInfo.ProtokollVersion = ProtokollVersion;
             %             mBlockTime = datevec(fread(fid, 9, '*char', cMachineFormat{:})','HHMMSSFFF');
@@ -107,7 +113,6 @@ if( fid ) && fid ~= -1
     end
     stInfo.nDimensions = nDim; % including time
     stInfo.nBlocks = nBlocks;
-    stInfo.TimeCorrection = -1; % JP: init time correction
     stInfo.StartTime = mBlockTime;
     stInfo.nFramesPerBlock = vFrames(1);
     stInfo.nFrames = sum(vFrames);

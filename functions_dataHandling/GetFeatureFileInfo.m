@@ -227,7 +227,7 @@ end
 % Byte 21 - Byte 24: Samplingrate (Integer)
 % Byte 25 - Byte 40: Timestamp (YYMMDD_hhmmssSSS)
 % Byte 41 - Byte 44: Calibration Value in dB, Channel 1 (Float)
-% Byte 45 - Byte 48: Calibration Value in dB, Channel 1 (Float)
+% Byte 45 - Byte 48: Calibration Value in dB, Channel 2 (Float)
 % Byte 49 - EOF    : FEATRUE-DATA
 % 
 %% Feature Header Protokoll-Version 3
@@ -240,7 +240,7 @@ end
 % Byte 25 - Byte 40: Sample-Timestamp (YYMMDD_hhmmssSSS)
 % Byte 41 - Byte 56: SystemClock-Timestamp (YYMMDD_hhmmssSSS)
 % Byte 57 - Byte 60: Calibration Value in dB, Channel 1 (Float)
-% Byte 61 - Byte 64: Calibration Value in dB, Channel 1 (Float)
+% Byte 61 - Byte 64: Calibration Value in dB, Channel 2 (Float)
 % Byte 65 - EOF    : FEATRUE-DATA
 
 %% Feature Header Protokoll-Version 4
@@ -253,7 +253,7 @@ end
 % Byte 25 - Byte 40: Sample-Timestamp (YYMMDD_hhmmssSSS)
 % Byte 41 - Byte 56: SystemClock-Timestamp (YYMMDD_hhmmssSSS)
 % Byte 57 - Byte 60: Calibration Value in dB, Channel 1 (Float)
-% Byte 61 - Byte 64: Calibration Value in dB, Channel 1 (Float)
+% Byte 61 - Byte 64: Calibration Value in dB, Channel 2 (Float)
 % Byte 65 - Byte 80: Android ID
 % Byte 81 - Byte 97: Bluetooth Transmitter MAC
 % Byte 98 - EOF    : FEATRUE-DATA
@@ -268,10 +268,10 @@ end
 % Byte 25 - Byte 40: Sample-Timestamp (YYMMDD_hhmmssSSS)
 % Byte 41 - Byte 56: SystemClock-Timestamp (YYMMDD_hhmmssSSS)
 % Byte 57 - Byte 60: Calibration Value in dB, Channel 1 (Float)
-% Byte 61 - Byte 64: Calibration Value in dB, Channel 1 (Float)
+% Byte 61 - Byte 64: Calibration Value in dB, Channel 2 (Float)
 % Byte 65 - Byte 80: Android ID
 % Byte 81 - Byte 97: Bluetooth Transmitter MAC
-% Byte 98 - Byte 101: Transmitter Samplingrate
+% Byte 98 - Byte 101: Transmitter Samplingrate (Float)
 % Byte 102 - EOF    : FEATRUE-DATA
 
 %--------------------Licence ---------------------------------------------

@@ -17,6 +17,7 @@
 % v0.7 SF, new header version (for details see end of code)
 % v0.8 SF, new V4 header version (for details see end of code)
 % v0.9 UK, safety net for exceptionally high (erroneous) frame numbers
+% v0.91 SF, new V5 header version (for details see end of code)
 
 function stInfo = GetFeatureFileInfo( szFilename, bInfo )
 
@@ -69,9 +70,13 @@ if( fid ) && fid ~= -1
             end 
             stInfo.AndroidID = '';
             stInfo.BluetoothTransmitterMAC = '';
+            stInfo.TransmitterSamplingrate = realmin;
             if ProtokollVersion >= 4
                 stInfo.AndroidID = strtrim(fread(fid, 16, '*char', cMachineFormat{:})');
                 stInfo.BluetoothTransmitterMAC = strtrim(fread(fid, 17, '*char', cMachineFormat{:})');
+            end
+            if ProtokollVersion >= 5
+                stInfo.TransmitterSamplingrate = double(fread(fid, 1, 'float32', cMachineFormat{:}));
             end
             stInfo.nBytesHeader = ftell(fid);
             stInfo.ProtokollVersion = ProtokollVersion;
@@ -182,6 +187,7 @@ if( fid ) && fid ~= -1
         fprintf(' Calibration Values:           %f dB, %f dB\n', stInfo.calibrationInDb(1), stInfo.calibrationInDb(2));
         fprintf(' Android ID:                   %s\n', stInfo.AndroidID);
         fprintf(' Bluetooth Transmitter MAC:    %s\n', stInfo.BluetoothTransmitterMAC);
+        fprintf(' Transmitter Samplingrate:     %s\n', stInfo.TransmitterSamplingrate);
         fprintf('\n');
         fprintf(' Session information \n\n');
         for iSession = 1:nSessions
@@ -251,6 +257,22 @@ end
 % Byte 65 - Byte 80: Android ID
 % Byte 81 - Byte 97: Bluetooth Transmitter MAC
 % Byte 98 - EOF    : FEATRUE-DATA
+
+%% Feature Header Protokoll-Version 5
+% Byte  1 - Byte  4: Protokoll Version (Integer)
+% Byte  5 - Byte  8: Block Count (Integer)
+% Byte  9 - Byte 12: Feature Dimensions (Integer)
+% Byte 13 - Byte 16: Block Size (Integer)
+% Byte 17 - Byte 20: Hop Size (Integer)
+% Byte 21 - Byte 24: Samplingrate (Integer)
+% Byte 25 - Byte 40: Sample-Timestamp (YYMMDD_hhmmssSSS)
+% Byte 41 - Byte 56: SystemClock-Timestamp (YYMMDD_hhmmssSSS)
+% Byte 57 - Byte 60: Calibration Value in dB, Channel 1 (Float)
+% Byte 61 - Byte 64: Calibration Value in dB, Channel 1 (Float)
+% Byte 65 - Byte 80: Android ID
+% Byte 81 - Byte 97: Bluetooth Transmitter MAC
+% Byte 98 - Byte 101: Transmitter Samplingrate
+% Byte 102 - EOF    : FEATRUE-DATA
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2005- 2012> J.Bitzer, Sven Fischer

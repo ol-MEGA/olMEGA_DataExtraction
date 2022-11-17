@@ -1,4 +1,4 @@
-% GetFeatureFileInfo  Extracts information of Android-generated Feature-Files
+%GetFeatureFileInfo  Extracts information of Android-generated Feature-Files
 %   GetFeatureFileInfo('filename') extracts the metadata in "filename"
 %   input:
 %       szFilename          android feature file
@@ -16,6 +16,8 @@
 % v0.6 SK, fixed session detection
 % v0.7 SF, new header version (for details see end of code)
 % v0.8 SF, new V4 header version (for details see end of code)
+% v0.9 UK, safety net for exceptionally high (erroneous) frame numbers
+% v0.91 SF, new V5 header version (for details see end of code)
 
 function stInfo = GetFeatureFileInfo( szFilename, bInfo )
 
@@ -68,9 +70,13 @@ if( fid ) && fid ~= -1
             end 
             stInfo.AndroidID = '';
             stInfo.BluetoothTransmitterMAC = '';
+            stInfo.TransmitterSamplingrate = realmin;
             if ProtokollVersion >= 4
                 stInfo.AndroidID = strtrim(fread(fid, 16, '*char', cMachineFormat{:})');
                 stInfo.BluetoothTransmitterMAC = strtrim(fread(fid, 17, '*char', cMachineFormat{:})');
+            end
+            if ProtokollVersion >= 5
+                stInfo.TransmitterSamplingrate = double(fread(fid, 1, 'float32', cMachineFormat{:}));
             end
             stInfo.nBytesHeader = ftell(fid);
             stInfo.ProtokollVersion = ProtokollVersion;
@@ -110,6 +116,30 @@ if( fid ) && fid ~= -1
     stInfo.nFramesPerBlock = vFrames(1);
     stInfo.nFrames = sum(vFrames);
     stInfo.vFrames = vFrames;
+    
+    % Safety net to catch exceptionally high frame numbers - probably
+    % overflow during write process?
+    if (stInfo.nFrames>60*stInfo.fs)
+        if contains(szFilename, 'PSD')
+            stInfo.nFrames = 480;
+            stInfo.nFramesPerBlock = 480;
+            stInfo.vFrames = 480;
+        elseif contains(szFilename, 'RMS')
+            stInfo.nFrames = 4800;
+            stInfo.nFramesPerBlock = 4800;
+            stInfo.vFrames = 4800;
+        elseif contains(szFilename, 'ZCR')
+            stInfo.nFrames = 4800;
+            stInfo.nFramesPerBlock = 4800;
+            stInfo.vFrames = 4800;
+        elseif contains(szFilename, 'VTB')
+            stInfo.nFrames = 15000;
+            stInfo.nFramesPerBlock = 15000;
+            stInfo.vFrames = 15000;
+        end
+        warning('feature file %s is corrupt. Assuming standard length.',szFilename);
+    end
+    
     stInfo.BlockSizeInSamples = (vFrames(1)-1) * stInfo.HopSizeInSamples + stInfo.FrameSizeInSamples;
     stInfo.mBlockTime = mBlockTime;
     
@@ -157,6 +187,7 @@ if( fid ) && fid ~= -1
         fprintf(' Calibration Values:           %f dB, %f dB\n', stInfo.calibrationInDb(1), stInfo.calibrationInDb(2));
         fprintf(' Android ID:                   %s\n', stInfo.AndroidID);
         fprintf(' Bluetooth Transmitter MAC:    %s\n', stInfo.BluetoothTransmitterMAC);
+        fprintf(' Transmitter Samplingrate:     %s\n', stInfo.TransmitterSamplingrate);
         fprintf('\n');
         fprintf(' Session information \n\n');
         for iSession = 1:nSessions
@@ -226,6 +257,22 @@ end
 % Byte 65 - Byte 80: Android ID
 % Byte 81 - Byte 97: Bluetooth Transmitter MAC
 % Byte 98 - EOF    : FEATRUE-DATA
+
+%% Feature Header Protokoll-Version 5
+% Byte  1 - Byte  4: Protokoll Version (Integer)
+% Byte  5 - Byte  8: Block Count (Integer)
+% Byte  9 - Byte 12: Feature Dimensions (Integer)
+% Byte 13 - Byte 16: Block Size (Integer)
+% Byte 17 - Byte 20: Hop Size (Integer)
+% Byte 21 - Byte 24: Samplingrate (Integer)
+% Byte 25 - Byte 40: Sample-Timestamp (YYMMDD_hhmmssSSS)
+% Byte 41 - Byte 56: SystemClock-Timestamp (YYMMDD_hhmmssSSS)
+% Byte 57 - Byte 60: Calibration Value in dB, Channel 1 (Float)
+% Byte 61 - Byte 64: Calibration Value in dB, Channel 1 (Float)
+% Byte 65 - Byte 80: Android ID
+% Byte 81 - Byte 97: Bluetooth Transmitter MAC
+% Byte 98 - Byte 101: Transmitter Samplingrate
+% Byte 102 - EOF    : FEATRUE-DATA
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2005- 2012> J.Bitzer, Sven Fischer

@@ -1,13 +1,3 @@
-%GetFeatureFileInfo  Extracts information of Android-generated Feature-Files
-%   GetFeatureFileInfo('filename') extracts the metadata in "filename"
-%   input:
-%       szFilename          android feature file
-%       bInfo               print detailed information
-%
-%   output:
-%       stInfo              parameter and metadata
-%
-% Auth: Sven Fischer, Joerg BitzervFrames, Sven Franz
 % Vers: v0.20
 % Vers v0.3 JB, Vise deleted and new stInfo introduced
 % v0.4 SK, force big endian for java compatability
@@ -19,12 +9,22 @@
 % v0.9 UK, safety net for exceptionally high (erroneous) frame numbers
 % v0.91 SF, new V5 header version (for details see end of code)
 
-function stInfo = GetFeatureFileInfo( szFilename, bInfo )
+function stInfo = GetFeatureFileInfo(szFilename, bInfo)
+%GetFeatureFileInfo  Extracts information of Android-generated Feature-Files
+%   GetFeatureFileInfo('filename') extracts the metadata in "filename"
+%   input:
+%       szFilename          android feature file
+%       bInfo               print detailed information
+%
+%   output:
+%       stInfo              parameter and metadata
+%
+% Auth: Sven Fischer, Joerg Bitzer, Sven Franz
 
 if nargin < 2
     bInfo = false;
 end
-%bInfo=0;
+
 cMachineFormat = {'b'};
 veryOldHeaderSizes = [29, 36]; % Header Sized of V0 and V1
 

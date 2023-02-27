@@ -33,7 +33,7 @@ fid = fopen( szFilename );
 
 % If the file could be opened successfully...
 if( fid ) && fid ~= -1
-    
+
     nBlocks = 0;            % # blocks
     
     while ~feof(fid)
@@ -50,6 +50,9 @@ if( fid ) && fid ~= -1
                 ProtokollVersion = double(fread( fid, 1, 'int32', cMachineFormat{:}));
                 vFrames = double(fread( fid, 1, 'int32', cMachineFormat{:}));
                 nDim = double(fread( fid, 1, 'int32', cMachineFormat{:}));
+            end
+            if (vFrames == 0) || (nDim == 0)
+                [vFrames, nDim] = validateFileSize(szFilename, fileSize);
             end
             stInfo.FrameSizeInSamples = double( fread(fid, 1, 'int32', cMachineFormat{:}));
             stInfo.HopSizeInSamples = double( fread(fid, 1, 'int32', cMachineFormat{:}));
@@ -116,7 +119,7 @@ if( fid ) && fid ~= -1
     stInfo.nFramesPerBlock = vFrames(1);
     stInfo.nFrames = sum(vFrames);
     stInfo.vFrames = vFrames;
-    
+   
     % Safety net to catch exceptionally high frame numbers - probably
     % overflow during write process?
     if (stInfo.nFrames>60*stInfo.fs)
@@ -139,7 +142,9 @@ if( fid ) && fid ~= -1
         end
         warning('feature file %s is corrupt. Assuming standard length.',szFilename);
     end
-    
+   
+
+
     stInfo.BlockSizeInSamples = (vFrames(1)-1) * stInfo.HopSizeInSamples + stInfo.FrameSizeInSamples;
     stInfo.mBlockTime = mBlockTime;
     
@@ -173,7 +178,7 @@ if( fid ) && fid ~= -1
         fprintf('\n**************************************************************\n');
         fprintf(' Feature-File Analysis for     %s\n\n', szFilename);
         fprintf(' Feature dimensions:           %d\n', nDim-2);
-        fprintf(' System Time:                  %s\n', datestr(stInfo.SystemTime,'HH:MM:SS.FFF'));
+        fprintf(' System Time:                  %s\n', datestr(stInfo.SystemTime,'yyyy-mm-dd HH:MM:SS.FFF'));
         fprintf(' Start 1st block:              %s\n', datestr(mBlockTime(1,:),'HH:MM:SS.FFF'));
         fprintf(' Start last block:             %s\n', datestr(mBlockTime(nBlocks,:),'HH:MM:SS.FFF'));
         fprintf(' Number of sessions:           %i\n', nSessions);
@@ -182,7 +187,7 @@ if( fid ) && fid ~= -1
         fprintf(' Number of total frames:       %i\n', stInfo.nFrames);
         fprintf(' Samplingrate:                 %i Hz\n', stInfo.fs);
         fprintf(' Blocksize:                    %i Samples / %0.3f s\n', stInfo.BlockSizeInSamples, BlockSizeInSeconds);
-        fprintf(' Framesize:                    %i Samples / %0.3f s\n', stInfo, stInfo.FrameSizeInSamples / stInfo.fs);
+        fprintf(' Framesize:                    %i Samples / %0.3f s\n', stInfo.FrameSizeInSamples, stInfo.FrameSizeInSamples / stInfo.fs);
         fprintf(' Hopsize:                      %i Samples / %0.3f s\n', stInfo.HopSizeInSamples, stInfo.HopSizeInSamples / stInfo.fs);
         fprintf(' Calibration Values:           %f dB, %f dB\n', stInfo.calibrationInDb(1), stInfo.calibrationInDb(2));
         fprintf(' Android ID:                   %s\n', stInfo.AndroidID);

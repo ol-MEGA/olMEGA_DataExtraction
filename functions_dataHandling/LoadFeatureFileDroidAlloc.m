@@ -39,6 +39,14 @@ cMachineFormat = {0, 'b'};
 % Get information about feature file for preallocation
 stInfo = GetFeatureFileInfo(szFilename, 0);
 
+% Invalidate if the above didn't fix it. 
+if stInfo.vFrames == 0
+    mFeatureData = [];
+    mFrameTime = [];
+    stInfo = [];
+    return
+end
+
 % Try to open the specified file for Binary Reading.
 fid = fopen( szFilename, 'rb' );
 

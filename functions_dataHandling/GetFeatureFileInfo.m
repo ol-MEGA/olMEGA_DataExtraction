@@ -1,3 +1,13 @@
+%GetFeatureFileInfo  Extracts information of Android-generated Feature-Files
+%   GetFeatureFileInfo('filename') extracts the metadata in "filename"
+%   input:
+%       szFilename          android feature file
+%       bInfo               print detailed information
+%
+%   output:
+%       stInfo              parameter and metadata
+%
+% Auth: Sven Fischer, Joerg BitzervFrames, Sven Franz
 % Vers: v0.20
 % Vers v0.3 JB, Vise deleted and new stInfo introduced
 % v0.4 SK, force big endian for java compatability
@@ -8,23 +18,14 @@
 % v0.8 SF, new V4 header version (for details see end of code)
 % v0.9 UK, safety net for exceptionally high (erroneous) frame numbers
 % v0.91 SF, new V5 header version (for details see end of code)
+% v0.92 SF, new V6 header version (for details see end of code)
 
-function stInfo = GetFeatureFileInfo(szFilename, bInfo)
-%GetFeatureFileInfo  Extracts information of Android-generated Feature-Files
-%   GetFeatureFileInfo('filename') extracts the metadata in "filename"
-%   input:
-%       szFilename          android feature file
-%       bInfo               print detailed information
-%
-%   output:
-%       stInfo              parameter and metadata
-%
-% Auth: Sven Fischer, Joerg Bitzer, Sven Franz
+function stInfo = GetFeatureFileInfo( szFilename, bInfo )
 
 if nargin < 2
     bInfo = false;
 end
-
+%bInfo=0;
 cMachineFormat = {'b'};
 veryOldHeaderSizes = [29, 36]; % Header Sized of V0 and V1
 
@@ -33,7 +34,7 @@ fid = fopen( szFilename );
 
 % If the file could be opened successfully...
 if( fid ) && fid ~= -1
-
+    
     nBlocks = 0;            % # blocks
     
     while ~feof(fid)
@@ -50,9 +51,6 @@ if( fid ) && fid ~= -1
                 ProtokollVersion = double(fread( fid, 1, 'int32', cMachineFormat{:}));
                 vFrames = double(fread( fid, 1, 'int32', cMachineFormat{:}));
                 nDim = double(fread( fid, 1, 'int32', cMachineFormat{:}));
-            end
-            if (vFrames == 0) || (nDim == 0)
-                [vFrames, nDim] = validateFileSize(szFilename, fileSize);
             end
             stInfo.FrameSizeInSamples = double( fread(fid, 1, 'int32', cMachineFormat{:}));
             stInfo.HopSizeInSamples = double( fread(fid, 1, 'int32', cMachineFormat{:}));
@@ -74,12 +72,16 @@ if( fid ) && fid ~= -1
             stInfo.AndroidID = '';
             stInfo.BluetoothTransmitterMAC = '';
             stInfo.TransmitterSamplingrate = -1;
+            stInfo.App_Version = '';
             if ProtokollVersion >= 4
                 stInfo.AndroidID = strtrim(fread(fid, 16, '*char', cMachineFormat{:})');
                 stInfo.BluetoothTransmitterMAC = strtrim(fread(fid, 17, '*char', cMachineFormat{:})');
             end
             if ProtokollVersion >= 5
                 stInfo.TransmitterSamplingrate = double(fread(fid, 1, 'float32', cMachineFormat{:}));
+            end
+            if ProtokollVersion >= 6
+                stInfo.App_Version = strtrim(fread(fid, 20, '*char', cMachineFormat{:})');
             end
             stInfo.nBytesHeader = ftell(fid);
             stInfo.ProtokollVersion = ProtokollVersion;
@@ -119,7 +121,7 @@ if( fid ) && fid ~= -1
     stInfo.nFramesPerBlock = vFrames(1);
     stInfo.nFrames = sum(vFrames);
     stInfo.vFrames = vFrames;
-   
+    
     % Safety net to catch exceptionally high frame numbers - probably
     % overflow during write process?
     if (stInfo.nFrames>60*stInfo.fs)
@@ -142,9 +144,7 @@ if( fid ) && fid ~= -1
         end
         warning('feature file %s is corrupt. Assuming standard length.',szFilename);
     end
-   
-
-
+    
     stInfo.BlockSizeInSamples = (vFrames(1)-1) * stInfo.HopSizeInSamples + stInfo.FrameSizeInSamples;
     stInfo.mBlockTime = mBlockTime;
     
@@ -178,7 +178,7 @@ if( fid ) && fid ~= -1
         fprintf('\n**************************************************************\n');
         fprintf(' Feature-File Analysis for     %s\n\n', szFilename);
         fprintf(' Feature dimensions:           %d\n', nDim-2);
-        fprintf(' System Time:                  %s\n', datestr(stInfo.SystemTime,'yyyy-mm-dd HH:MM:SS.FFF'));
+        fprintf(' System Time:                  %s\n', datestr(stInfo.SystemTime,'HH:MM:SS.FFF'));
         fprintf(' Start 1st block:              %s\n', datestr(mBlockTime(1,:),'HH:MM:SS.FFF'));
         fprintf(' Start last block:             %s\n', datestr(mBlockTime(nBlocks,:),'HH:MM:SS.FFF'));
         fprintf(' Number of sessions:           %i\n', nSessions);
@@ -187,12 +187,13 @@ if( fid ) && fid ~= -1
         fprintf(' Number of total frames:       %i\n', stInfo.nFrames);
         fprintf(' Samplingrate:                 %i Hz\n', stInfo.fs);
         fprintf(' Blocksize:                    %i Samples / %0.3f s\n', stInfo.BlockSizeInSamples, BlockSizeInSeconds);
-        fprintf(' Framesize:                    %i Samples / %0.3f s\n', stInfo.FrameSizeInSamples, stInfo.FrameSizeInSamples / stInfo.fs);
+        fprintf(' Framesize:                    %i Samples / %0.3f s\n', stInfo, stInfo.FrameSizeInSamples / stInfo.fs);
         fprintf(' Hopsize:                      %i Samples / %0.3f s\n', stInfo.HopSizeInSamples, stInfo.HopSizeInSamples / stInfo.fs);
         fprintf(' Calibration Values:           %f dB, %f dB\n', stInfo.calibrationInDb(1), stInfo.calibrationInDb(2));
         fprintf(' Android ID:                   %s\n', stInfo.AndroidID);
         fprintf(' Bluetooth Transmitter MAC:    %s\n', stInfo.BluetoothTransmitterMAC);
         fprintf(' Transmitter Samplingrate:     %s\n', stInfo.TransmitterSamplingrate);
+        fprintf(' Android App Version:     %s\n', stInfo.App_Version);
         fprintf('\n');
         fprintf(' Session information \n\n');
         for iSession = 1:nSessions
@@ -278,6 +279,23 @@ end
 % Byte 81 - Byte 97: Bluetooth Transmitter MAC
 % Byte 98 - Byte 101: Transmitter Samplingrate (Float)
 % Byte 102 - EOF    : FEATRUE-DATA
+
+%% Feature Header Protokoll-Version 6
+% Byte  1 - Byte  4: Protokoll Version (Integer)
+% Byte  5 - Byte  8: Block Count (Integer)
+% Byte  9 - Byte 12: Feature Dimensions (Integer)
+% Byte 13 - Byte 16: Block Size (Integer)
+% Byte 17 - Byte 20: Hop Size (Integer)
+% Byte 21 - Byte 24: Samplingrate (Integer)
+% Byte 25 - Byte 40: Sample-Timestamp (YYMMDD_hhmmssSSS)
+% Byte 41 - Byte 56: SystemClock-Timestamp (YYMMDD_hhmmssSSS)
+% Byte 57 - Byte 60: Calibration Value in dB, Channel 1 (Float)
+% Byte 61 - Byte 64: Calibration Value in dB, Channel 2 (Float)
+% Byte 65 - Byte 80: Android ID
+% Byte 81 - Byte 97: Bluetooth Transmitter MAC
+% Byte 98 - Byte 101: Transmitter Samplingrate (Float)
+% Byte 102 - Byte 121: Android APP VERSION_NAME
+% Byte 122 - EOF    : FEATRUE-DATA
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2005- 2012> J.Bitzer, Sven Fischer

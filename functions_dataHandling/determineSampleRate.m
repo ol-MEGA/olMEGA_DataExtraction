@@ -1,6 +1,6 @@
 function [nSampleRate, vShift]=determineSampleRate(obj,szFeature,varargin)
 % function to determine the sample rate for a specific time frame
-% Usage [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
+% Usage [nSampleRate, vShift]=determineSampleRate(obj,szFeature,varargin)
 %
 % Parameters
 % ----------
@@ -37,12 +37,9 @@ function [nSampleRate, vShift]=determineSampleRate(obj,szFeature,varargin)
 %
 % Returns
 % -------
-% Data :  a matrix containg the feature data
+% nSampleRate: the estimated sample rate
 %
-% TimeVec :  a date/time vector with the corresponding time information
-%
-% stInfoFile : a struct containg infos about the feature files, e.g. fs,
-%              frame size in samples...
+% vShift : vector with time shift for first and last feature file
 %
 % Author: J.Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
